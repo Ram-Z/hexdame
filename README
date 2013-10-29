@@ -4,20 +4,17 @@
  2.) Building
  3.) Installing
  4.) Contributing
- 
+
 == 1. PREREQUISITES ==
 
  This project requires:
   * Cross-platform Make (CMake) v2.6.2+
   * GNU Make or equivalent.
-  * GCC or an alternative, reasonably conformant C++ compiler.
-  * Boost C++ Libraries v1.37+ [HEADERS and LIBRARIES]
+  * GCC or an alternative, reasonably conformant C++11 compiler.
   * Qt Framework v4.5+
-  * Log4Cxx v0.10.0+
-  * UnitTest++ (a.k.a. unittest-cpp)
 
 == 2. BUILDING ==
- 
+
  This project uses the Cross-platform Make (CMake) build system. However, we
  have conveniently provided a wrapper configure script and Makefile so that
  the typical build invocation of "./configure" followed by "make" will work.
@@ -32,4 +29,9 @@
 
 == 4. CONTRIBUTING ==
 
- TODO: Enhance section.
+ This project is an individually graded assignment for the university,
+ contributions will not be accepted until it is handed in.
+
+ PS: if you really want to contribute, send me patches per mail ;)
+ PPS: no, seriously, I can't accept patches.
+ PPPS: send them in anyway :P

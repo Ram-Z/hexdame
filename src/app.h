@@ -2,10 +2,10 @@
 #ifndef HEADER_SRC_APP_H_INCLUDED
 #define HEADER_SRC_APP_H_INCLUDED
 
+#include <memory>
 #include <QtCore>
 #include <QtGui>
 #include <log4cxx/logger.h>
-#include <boost/shared_ptr.hpp>
 
 class App : public QApplication
 {
@@ -53,7 +53,7 @@ class App : public QApplication
         QString _invocation;
         bool _gui;
         bool _interactive;
-        boost::shared_ptr<QMainWindow> _mainwindow;
+        std::shared_ptr<QMainWindow> _mainwindow;
 };
 
 #endif
