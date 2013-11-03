@@ -21,9 +21,9 @@ Board::Piece::Piece(HexGrid::Piece c, QGraphicsItem *parent)
     : QGraphicsEllipseItem(parent)
 {
     static const float r = radius * 0.6;
-    if (c == HexGrid::White)
+    if (c == HexGrid::WhitePawn)
         setBrush(QBrush(Qt::gray));
-    else if (c == HexGrid::Black)
+    else if (c == HexGrid::BlackPawn)
         setBrush(QBrush(Qt::black));
 
     setRect(-r, -r, 2 * r, 2 * r);
@@ -53,7 +53,7 @@ Board::Board()
         map[h] = c;
 
         HexGrid::Piece piece = grid.at(c);
-        if (piece != HexGrid::None) {
+        if (piece != HexGrid::Empty) {
             Piece *p = new Piece(piece, h);
         }
 

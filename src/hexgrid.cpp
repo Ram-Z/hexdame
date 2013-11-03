@@ -12,13 +12,11 @@ HexGrid::HexGrid()
         for (int y = 0; y < _size; ++y) {
             int s = size() / 2;
             if (qAbs(x - y) <= s)
-                grid[Coord {x, y}] = None;
+                grid[Coord {x, y}] = Empty;
             if (x < s && y < s)
-                grid[Coord {x, y}] = White;
+                grid[Coord {x, y}] = WhitePawn;
             if (x > s && y > s)
-                grid[Coord {x, y}] = Black;
-            qDebug() << qHash(Coord {x, y});
-
+                grid[Coord {x, y}] = BlackPawn;
         }
     }
 }
@@ -36,13 +34,25 @@ HexGrid::canJump(int x, int y) const
 }
 
 void
-HexGrid::computeValidMoves()
+HexGrid::computeValidMoves(Color col)
 {
-    foreach (Coord c, coords()) {
-        Piece p = at(c);
-        foreach (Coord neigh, neighbours(c)) {
-            if (p == Black && at(neigh) == White) {
+    static int jump = 0;
+    foreach (Coord from, coords()) {
+        Piece p = at(from);
+        if (color(p) != col) continue;
 
+        if (isPawn(p)) {
+            foreach (Coord to, neighbours(from)) {
+                if (!jump) {
+                    QList<Coord> forward;
+                    forward << Coord {1, 0} << Coord {1, 1} << Coord {0, 1};
+                    if (at(to) == Empty) {
+                    }
+                }
+
+                if (isBlack(p) && isWhite(at(to))) {
+
+                }
             }
         }
     }
@@ -54,10 +64,10 @@ HexGrid::movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord)
     //TODO check if valid move
     if (oldCoord != newCoord) {
         rat(newCoord) = at(oldCoord);
-        rat(oldCoord) = Piece::None;
+        rat(oldCoord) = Empty;
     }
 
-    computeValidMoves();
+    computeValidMoves(color(at(newCoord)));
 }
 
 QList< HexGrid::Coord >
@@ -67,7 +77,8 @@ HexGrid::neighbours(HexGrid::Coord c) const
     if (cache.contains(c)) return cache.value(c);
 
     QList<Coord> list, retval;
-    list << Coord {1, 0} << Coord {1, 1} << Coord {0, 1} << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
+    list << Coord {1, 0} << Coord {1, 1} << Coord {0, 1}
+         << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
 
     foreach (Coord dc, list) {
         if (grid.contains(c + dc))

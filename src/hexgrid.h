@@ -12,9 +12,9 @@ class HexGrid : public QObject
 public:
     enum Piece {
         BlackKing = -2,
-        Black = -1,
-        None  = 0,
-        White = 1,
+        BlackPawn = -1,
+        Empty  = 0,
+        WhitePawn = 1,
         WhiteKing = 2
     };
 
@@ -23,6 +23,17 @@ public:
         None = 0,
         White = 1
     };
+
+    inline static bool isWhite(Piece p) { return p > 0; }
+    inline static bool isWhite(Color c) { return c > 0; }
+    inline static bool isBlack(Piece p) { return p < 0; }
+    inline static bool isBlack(Color c) { return c < 0; }
+    inline static bool isEmpty(Piece p) { return !p; }
+    inline static bool isEmpty(Color c) { return !c; }
+    inline static bool isPawn(Piece p) { return qAbs<int>(p) == 1; }
+    inline static bool isKing(Piece p) { return qAbs<int>(p) == 2; }
+
+    inline static Color color(Piece p) { return p > 0 ? White : p < 0 ? Black : None; }
 
     struct Coord {
         int x, y;
@@ -61,7 +72,7 @@ public slots:
     bool movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord);
 
 private:
-    void computeValidMoves();
+    void computeValidMoves(HexGrid::Color col);
 
     int _size = 0;
     QHash<Coord, Piece> grid;
