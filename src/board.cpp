@@ -50,7 +50,8 @@ Board::Board()
         t->rotate(180);
 #endif
 
-        map[h] = c;
+        itemToCoord[h] = c;
+        coordToItem[c] = h;
 
         HexGrid::Piece piece = grid.at(c);
         if (piece != HexGrid::Empty) {
@@ -73,13 +74,47 @@ Board::mousePressEvent(QMouseEvent *event)
 {
     QGraphicsView::mousePressEvent(event);
 
-    QGraphicsItem *hex = 0;
-    QGraphicsItem *piece = 0;
+    Hex *hex = 0;
+    Piece *piece = 0;
     foreach (QGraphicsItem * item, items(event->pos())) {
-        if (item->type() == PieceItem)
-            selectedPiece = item;
-        if (item->type() == HexItem)
-            hex = item;
+        if (item->type() == PieceItem) {
+            piece = qgraphicsitem_cast<Piece *>(item);
+            qDebug() << piece;
+        }
+        if (item->type() == HexItem) {
+            hex = qgraphicsitem_cast<Hex *>(item);
+            qDebug() << hex;
+        }
+    }
+
+    if (piece) {
+        hexFrom = hex;
+        selectedPiece = piece;
+
+        // draw it on top
+        hexFrom->setZValue(1);
+
+        QList<HexGrid::Move> moves = grid.possibleMoves(itemToCoord.value(hex));
+        lines = new QGraphicsItemGroup();
+        foreach (HexGrid::Move move, moves) {
+            QPointF from = coordToItem.value(move.from)->pos();
+            QPointF to;
+            QColor col(qrand() % 255, qrand() % 255, qrand() % 255);
+            foreach (HexGrid::Coord c, move.path) {
+                to = coordToItem.value(c)->pos();
+
+                QGraphicsLineItem *line = new QGraphicsLineItem(QLineF(from, to));
+                line->setPen(col);
+
+                lines->addToGroup(line);
+
+                from = coordToItem.value(c)->pos();
+
+                Hex *dest = qgraphicsitem_cast<Hex *>(coordToItem.value(move.path.last()));
+                dest->setBrush(Qt::Dense1Pattern);
+            }
+            scene.addItem(lines);
+        }
     }
 }
 
@@ -88,20 +123,23 @@ Board::mouseReleaseEvent(QMouseEvent *event)
 {
     QGraphicsView::mouseReleaseEvent(event);
 
-    QGraphicsItem *hex = 0;
-    QGraphicsItem *piece = 0;
+    Hex *hex = 0;
+    Piece *piece = 0;
     foreach (QGraphicsItem * item, items(event->pos())) {
-        if (item->type() == PieceItem)
+        if (item->type() == PieceItem) {
             if (selectedPiece != item)
-                piece = item;
-        if (item->type() == HexItem)
-            hex = item;
+                piece = qgraphicsitem_cast<Piece *>(item);
+        }
+        if (item->type() == HexItem) {
+            hex = qgraphicsitem_cast<Hex *>(item);
+            qDebug() << hex;
+        }
     }
 
     if (selectedPiece) {
         if (hex && !piece) {
-            HexGrid::Coord oldCoord = map.value(selectedPiece->parentItem());
-            HexGrid::Coord newCoord = map.value(hex);
+            HexGrid::Coord oldCoord = itemToCoord.value(hexFrom);
+            HexGrid::Coord newCoord = itemToCoord.value(hex);
 
             selectedPiece->setParentItem(hex);
 
@@ -110,6 +148,13 @@ Board::mouseReleaseEvent(QMouseEvent *event)
 
         selectedPiece->setPos(0.0, 0.0);
 
+        // restore zValue
+        hexFrom->setZValue(0);
+
+        hexFrom = 0;
         selectedPiece = 0;
+
+        scene.removeItem(lines);
+        delete lines;
     }
 }

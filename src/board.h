@@ -23,15 +23,17 @@ class Board : public QGraphicsView
     class Hex : public QGraphicsPolygonItem
     {
     public:
+        enum { Type = UserType + 1 };
         explicit Hex(QGraphicsItem *parent = 0);
-        int type() const { return HexItem; }
+        int type() const { return Type; }
     };
 
     class Piece : public QGraphicsEllipseItem
     {
     public:
+        enum { Type = UserType + 2 };
         explicit Piece(HexGrid::Piece c, QGraphicsItem *parent = 0);
-        int type() const { return PieceItem; }
+        int type() const { return Type; }
     };
 
 public:
@@ -47,8 +49,11 @@ protected:
 private:
     QGraphicsScene scene;
 
-    QHash<QGraphicsItem *, HexGrid::Coord> map;
-    QGraphicsItem *selectedPiece = 0;
+    QHash<Hex *, HexGrid::Coord> itemToCoord;
+    QHash<HexGrid::Coord, Hex *> coordToItem;
+    Hex *hexFrom = 0;
+    Piece *selectedPiece = 0;
+    QGraphicsItemGroup *lines;
 
     HexGrid grid;
 };
