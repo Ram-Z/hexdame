@@ -16,32 +16,40 @@
 
 namespace
 {
-bool matches_option(const QString& givenoption, const QString& expectedoption, int mindashes=1, int maxdashes=2) {
+bool
+matches_option(const QString &givenoption, const QString &expectedoption,
+               int mindashes = 1, int maxdashes = 2)
+{
     int dashes = 0;
-    if ( givenoption.length() > 0 ) {
-        while ((dashes<givenoption.length())&&(givenoption[dashes]=='-')) {
+    if (givenoption.length() > 0) {
+        while ((dashes < givenoption.length()) && (givenoption[dashes] == '-')) {
             dashes++;
         }
     }
-    if ( (dashes < mindashes) || (dashes > maxdashes) ) {
+    if ((dashes < mindashes) || (dashes > maxdashes)) {
         return false;
     }
-    QString substr=givenoption.right(givenoption.length()-dashes);
-    return (expectedoption.compare(substr,Qt::CaseInsensitive)==0);
+    QString substr = givenoption.right(givenoption.length() - dashes);
+    return (expectedoption.compare(substr, Qt::CaseInsensitive) == 0);
 }
 }
 
-inline std::ostream& operator<<(std::ostream& out, const QString& str)
+inline std::ostream &
+operator<<(std::ostream &out, const QString &str)
 {
     QByteArray a = str.toUtf8();
     out << a.constData();
     return out;
 }
 
-App::App(int& argc, char** argv) : QApplication(argc,argv), _invocation(argv[0]), _gui(false), _interactive(false)
+App::App(int &argc, char **argv)
+    : QApplication(argc, argv)
+    , _invocation(argv[0])
+    , _gui(false)
+    , _interactive(false)
 {
     // Enforce singleton property
-    if ( _instance ) {
+    if (_instance) {
         throw std::runtime_error("Only one instance of App allowed.");
     }
 
@@ -63,21 +71,21 @@ App::App(int& argc, char** argv) : QApplication(argc,argv), _invocation(argv[0])
 
     // Parse the commandline
     int idx = 1;
-    while ( idx < argc ) {
+    while (idx < argc) {
         QString arg(argv[idx]);
-        if ( matches_option(arg,"help",0) || matches_option(arg,"h") || matches_option(arg,"?",0) ) {
+        if (matches_option(arg, "help", 0) || matches_option(arg, "h") || matches_option(arg, "?", 0)) {
             printHelpMessage();
             std::exit(0);
-        } else if ( matches_option(arg,"version",0) ) {
+        } else if (matches_option(arg, "version", 0)) {
             printVersionMessage();
             std::exit(0);
-        } else if ( matches_option(arg,"version-triplet") ) {
+        } else if (matches_option(arg, "version-triplet")) {
             printVersionTripletMessage();
             std::exit(0);
-        } else if ( matches_option(arg,"prefset") ) {
+        } else if (matches_option(arg, "prefset")) {
             // Verify that there is another argument
-            if ( (idx+1) >= argc ) {
-                LOG4CXX_FATAL(_logger,"Option \"" << arg << "\" requires a parameter.");
+            if ((idx + 1) >= argc) {
+                LOG4CXX_FATAL(_logger, "Option \"" << arg << "\" requires a parameter.");
                 std::exit(1);
             }
 
@@ -91,18 +99,18 @@ App::App(int& argc, char** argv) : QApplication(argc,argv), _invocation(argv[0])
             // If there is, set the preference;
             // Otherwise, remove the preference
             size_t eqidx = param.find('=');
-            if ( eqidx != std::string::npos ) {
-                std::string key = param.substr(0,eqidx);
-                std::string val = param.substr(eqidx+1);
-                setPreference(key,val);
+            if (eqidx != std::string::npos) {
+                std::string key = param.substr(0, eqidx);
+                std::string val = param.substr(eqidx + 1);
+                setPreference(key, val);
             } else {
                 unsetPreference(param);
             }
             done = true;
-        } else if ( matches_option(arg,"prefdel") ) {
+        } else if (matches_option(arg, "prefdel")) {
             // Verify that there is another argument
-            if ( (idx+1) >= argc ) {
-                LOG4CXX_FATAL(_logger,"Option \"" << arg << "\" requires a parameter.");
+            if ((idx + 1) >= argc) {
+                LOG4CXX_FATAL(_logger, "Option \"" << arg << "\" requires a parameter.");
                 std::exit(1);
             }
 
@@ -115,13 +123,13 @@ App::App(int& argc, char** argv) : QApplication(argc,argv), _invocation(argv[0])
             // Remove the preference
             unsetPreference(param);
             done = true;
-        } else if ( matches_option(arg,"preflist") ) {
+        } else if (matches_option(arg, "preflist")) {
             printAllPreferences();
             done = true;
-        } else if ( matches_option(arg,"prefget") ) {
+        } else if (matches_option(arg, "prefget")) {
             // Verify that there is another argument
-            if ( (idx+1) >= argc ) {
-                LOG4CXX_FATAL(_logger,"Option \"" << arg << "\" requires a parameter.");
+            if ((idx + 1) >= argc) {
+                LOG4CXX_FATAL(_logger, "Option \"" << arg << "\" requires a parameter.");
                 std::exit(1);
             }
 
@@ -134,10 +142,10 @@ App::App(int& argc, char** argv) : QApplication(argc,argv), _invocation(argv[0])
             // Print the preference
             printPreference(param);
             done = true;
-        } else if ( matches_option(arg,"loglevel") ) {
+        } else if (matches_option(arg, "loglevel")) {
             // Verify that there is another argument
-            if ( (idx+1) >= argc ) {
-                LOG4CXX_FATAL(_logger,"Option \"" << arg << "\" requires a parameter.");
+            if ((idx + 1) >= argc) {
+                LOG4CXX_FATAL(_logger, "Option \"" << arg << "\" requires a parameter.");
                 std::exit(1);
             }
 
@@ -149,36 +157,36 @@ App::App(int& argc, char** argv) : QApplication(argc,argv), _invocation(argv[0])
 
             // Determine if there is an equals sign and act accordingly
             size_t eqidx = param.find('=');
-            if ( eqidx != std::string::npos ) {
-                std::string logger = param.substr(0,eqidx);
-                std::string level  = param.substr(eqidx+1);
-                setLogLevel(logger,level);
+            if (eqidx != std::string::npos) {
+                std::string logger = param.substr(0, eqidx);
+                std::string level  = param.substr(eqidx + 1);
+                setLogLevel(logger, level);
             } else {
-                setLogLevel("",param);
+                setLogLevel("", param);
             }
-        } else if ( matches_option(arg,"appid") || matches_option(arg,"application-identifier") ) {
+        } else if (matches_option(arg, "appid") || matches_option(arg, "application-identifier")) {
             printApplicationIdentifier();
             std::exit(0);
-        } else if ( matches_option(arg,"gui") ) {
-            if ( _interactive ) {
-                LOG4CXX_FATAL(_logger,"Cannot specify both \"--gui\" and \"--interactive\" simultaneously.");
+        } else if (matches_option(arg, "gui")) {
+            if (_interactive) {
+                LOG4CXX_FATAL(_logger, "Cannot specify both \"--gui\" and \"--interactive\" simultaneously.");
                 std::exit(1);
             }
-            if ( _gui ) {
-                LOG4CXX_WARN(_logger,"Option \"" << arg << "\" already specified. Ignoring.");
+            if (_gui) {
+                LOG4CXX_WARN(_logger, "Option \"" << arg << "\" already specified. Ignoring.");
             }
             _gui = true;
-        } else if ( matches_option(arg,"interactive") ) {
-            if ( _gui ) {
-                LOG4CXX_FATAL(_logger,"Cannot specify both \"--gui\" and \"--interactive\" simultaneously.");
+        } else if (matches_option(arg, "interactive")) {
+            if (_gui) {
+                LOG4CXX_FATAL(_logger, "Cannot specify both \"--gui\" and \"--interactive\" simultaneously.");
                 std::exit(1);
             }
-            if ( _interactive ) {
-                LOG4CXX_WARN(_logger,"Option \"" << arg << "\" already specified. Ignoring.");
+            if (_interactive) {
+                LOG4CXX_WARN(_logger, "Option \"" << arg << "\" already specified. Ignoring.");
             }
             _interactive = true;
         } else {
-            LOG4CXX_WARN(_logger,"Unrecognized option: \"" << arg << "\". Ignoring");
+            LOG4CXX_WARN(_logger, "Unrecognized option: \"" << arg << "\". Ignoring");
         }
         idx++;
     }
@@ -190,7 +198,7 @@ App::~App()
 {
 }
 
-App*
+App *
 App::INSTANCE()
 {
     return _instance;
@@ -204,22 +212,22 @@ App::initGUI()
     _mainwindow->setCentralWidget(new QWidget);
 
     // Setup the central widget
-    QWidget* centralwidget = _mainwindow->centralWidget();
-    QDesktopWidget* desktopwidget = desktop();
+    QWidget *centralwidget = _mainwindow->centralWidget();
+    QDesktopWidget *desktopwidget = desktop();
     int preferredwidth = 1024;
     int preferredheight = 768;
-    int leftmargin = (desktopwidget->width()-preferredwidth)/2;
-    int topmargin  = (desktopwidget->height()-preferredheight)/2;
+    int leftmargin = (desktopwidget->width() - preferredwidth) / 2;
+    int topmargin  = (desktopwidget->height() - preferredheight) / 2;
 
     Board *b = new Board();
     b->show();
     _mainwindow->setCentralWidget(b);
 
     centralwidget->setWindowTitle(getProjectName());
-    centralwidget->setFixedSize(preferredwidth,preferredheight);
+    centralwidget->setFixedSize(preferredwidth, preferredheight);
     std::auto_ptr<QLabel> label(new QLabel("Hello world!"));
     std::auto_ptr<QGridLayout> layout(new QGridLayout);
-    layout->addWidget(label.release(),0,0,Qt::AlignCenter);
+    layout->addWidget(label.release(), 0, 0, Qt::AlignCenter);
     centralwidget->setLayout(layout.release());
 
     // Setup the toolbars
@@ -231,7 +239,7 @@ App::initGUI()
 
     // Display the main window
     _mainwindow->setVisible(true);
-    _mainwindow->move(leftmargin,topmargin);
+    _mainwindow->move(leftmargin, topmargin);
 }
 
 void
@@ -361,11 +369,11 @@ App::getProjectInvocation()
 }
 
 std::string
-App::getKeyName(const std::string& key)const
+App::getKeyName(const std::string &key)const
 {
     std::string result(key);
-    for ( size_t i = 0; i < result.size(); i++ ) {
-        if ( (result[i]=='/') || (result[i]=='\\') ) {
+    for (size_t i = 0; i < result.size(); i++) {
+        if ((result[i] == '/') || (result[i] == '\\')) {
             result[i] = '.';
         }
     }
@@ -373,11 +381,11 @@ App::getKeyName(const std::string& key)const
 }
 
 std::string
-App::getKeyRepr(const std::string& key)const
+App::getKeyRepr(const std::string &key)const
 {
     std::string result(key);
-    for ( size_t i = 0; i < result.size(); i++ ) {
-        if ( (result[i]=='/') || (result[i]=='\\') ) {
+    for (size_t i = 0; i < result.size(); i++) {
+        if ((result[i] == '/') || (result[i] == '\\')) {
             result[i] = '/';
         }
     }
@@ -385,25 +393,25 @@ App::getKeyRepr(const std::string& key)const
 }
 
 void
-App::setPreference(const std::string& key, const std::string& val)
+App::setPreference(const std::string &key, const std::string &val)
 {
     QSettings settings;
     std::string keyrep(getKeyRepr(key));
     QString qkeyrep(keyrep.c_str());
     QString qval(val.c_str());
-    settings.setValue(qkeyrep,qval);
+    settings.setValue(qkeyrep, qval);
     settings.sync();
 }
 
 void
-App::unsetPreference(const std::string& key)
+App::unsetPreference(const std::string &key)
 {
     QSettings settings;
     std::string keyrep(getKeyRepr(key));
     QString qkeyrep(keyrep.c_str());
     settings.beginGroup(qkeyrep);
-    if ( (settings.childGroups().length()!=0) || (settings.childKeys().length()!=0) ) {
-        settings.setValue("","");
+    if ((settings.childGroups().length() != 0) || (settings.childKeys().length() != 0)) {
+        settings.setValue("", "");
     } else {
         settings.remove("");
     }
@@ -412,14 +420,14 @@ App::unsetPreference(const std::string& key)
 }
 
 void
-App::printPreference(const std::string& key)const
+App::printPreference(const std::string &key)const
 {
     QSettings settings;
     std::string keyrep(getKeyRepr(key));
     QString qkeyrep(keyrep.c_str());
-    QString result="undefined";
-    if ( settings.contains(qkeyrep) ) {
-        result=settings.value(qkeyrep,QString("undefined")).toString();
+    QString result = "undefined";
+    if (settings.contains(qkeyrep)) {
+        result = settings.value(qkeyrep, QString("undefined")).toString();
     }
     std::cout << result << std::endl;
 }
@@ -429,50 +437,50 @@ App::printAllPreferences()const
 {
     QSettings settings;
     QStringList keys = settings.allKeys();
-    for ( QStringList::const_iterator it = keys.begin(); it != keys.end(); ++it ) {
+    for (QStringList::const_iterator it = keys.begin(); it != keys.end(); ++it) {
         QString qkeystr = *it;
         QString qvalstr = settings.value(qkeystr).toString();
 
-        if ( ! qvalstr.isEmpty() ) {
-            std::string key=getKeyName(convert(qkeystr));
+        if (! qvalstr.isEmpty()) {
+            std::string key = getKeyName(convert(qkeystr));
             std::cout << key << "=" << qvalstr << std::endl;
         }
     }
 }
 
 void
-App::setLogLevel(const std::string& logger, const std::string& level)
+App::setLogLevel(const std::string &logger, const std::string &level)
 {
-    log4cxx::LoggerPtr loggerptr = ((logger=="")?(log4cxx::Logger::getRootLogger()):(log4cxx::Logger::getLogger(logger)));
+    log4cxx::LoggerPtr loggerptr = ((logger == "") ? (log4cxx::Logger::getRootLogger()) : (log4cxx::Logger::getLogger(logger)));
     std::string lowercaselevel(level);
-    for ( size_t i = 0; i < lowercaselevel.size(); i++ ) {
+    for (size_t i = 0; i < lowercaselevel.size(); i++) {
         lowercaselevel[i] = std::tolower(lowercaselevel[i]);
     }
 
-    if ( lowercaselevel == "all" ) {
+    if (lowercaselevel == "all") {
         loggerptr->setLevel(log4cxx::Level::getAll());
-    } else if ( lowercaselevel == "trace" ) {
+    } else if (lowercaselevel == "trace") {
         loggerptr->setLevel(log4cxx::Level::getTrace());
-    } else if ( lowercaselevel == "debug" ) {
+    } else if (lowercaselevel == "debug") {
         loggerptr->setLevel(log4cxx::Level::getDebug());
-    } else if ( lowercaselevel == "info" ) {
+    } else if (lowercaselevel == "info") {
         loggerptr->setLevel(log4cxx::Level::getInfo());
-    } else if ( lowercaselevel == "warn" ) {
+    } else if (lowercaselevel == "warn") {
         loggerptr->setLevel(log4cxx::Level::getWarn());
-    } else if ( lowercaselevel == "error" ) {
+    } else if (lowercaselevel == "error") {
         loggerptr->setLevel(log4cxx::Level::getError());
-    } else if ( lowercaselevel == "fatal" ) {
+    } else if (lowercaselevel == "fatal") {
         loggerptr->setLevel(log4cxx::Level::getFatal());
-    } else if ( (lowercaselevel == "off")  || (lowercaselevel == "none") ) {
+    } else if ((lowercaselevel == "off")  || (lowercaselevel == "none")) {
         loggerptr->setLevel(log4cxx::Level::getOff());
     } else {
-        LOG4CXX_FATAL(_logger,"Unrecognized logging level: \"" << level << "\".");
+        LOG4CXX_FATAL(_logger, "Unrecognized logging level: \"" << level << "\".");
         std::exit(1);
     }
 }
 
 std::string
-App::convert(const QString& str)const
+App::convert(const QString &str)const
 {
     QByteArray data = str.toUtf8();
     std::string result(data.constData());
@@ -480,13 +488,13 @@ App::convert(const QString& str)const
 }
 
 QString
-App::convert(const std::string& str)const
+App::convert(const std::string &str)const
 {
     QString result(str.c_str());
     return result;
 }
 
-App*
+App *
 App::_instance = 0;
 
 log4cxx::LoggerPtr
