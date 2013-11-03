@@ -24,17 +24,6 @@ public:
         White = 1
     };
 
-    inline static bool isWhite(Piece p) { return p > 0; }
-    inline static bool isWhite(Color c) { return c > 0; }
-    inline static bool isBlack(Piece p) { return p < 0; }
-    inline static bool isBlack(Color c) { return c < 0; }
-    inline static bool isEmpty(Piece p) { return !p; }
-    inline static bool isEmpty(Color c) { return !c; }
-    inline static bool isPawn(Piece p) { return qAbs<int>(p) == 1; }
-    inline static bool isKing(Piece p) { return qAbs<int>(p) == 2; }
-
-    inline static Color color(Piece p) { return p > 0 ? White : p < 0 ? Black : None; }
-
     struct Coord {
         int x, y;
 
@@ -46,7 +35,40 @@ public:
 
         const Coord operator-(Coord c) const { return Coord {x - c.x, y - c.y}; }
         Coord &operator-=(Coord c) { x -= c.x; y -= c.y; return *this; }
+
+        friend const Coord operator*(int i, Coord c) { return Coord {i * c.x, i * c.y}; }
+        friend const Coord operator*(Coord c, int i) { return i * c; }
+        Coord &operator*=(int i) { x *= i; y *= i; return *this; }
+
+        friend QDebug operator<<(QDebug dbg, const HexGrid::Coord &coord);
+
+        friend uint qHash(const HexGrid::Coord &c);
     };
+
+    struct Move {
+        Coord from;
+        QList<Coord> path;
+        QList<Coord> taken;
+
+        inline const Coord &to() const { return path.last(); }
+    };
+
+    inline static bool isWhite(Piece p) { return p > 0; }
+    inline static bool isWhite(Color c) { return c > 0; }
+    inline bool isWhite(Coord c) const { return isWhite(at(c)); }
+    inline static bool isBlack(Piece p) { return p < 0; }
+    inline static bool isBlack(Color c) { return c < 0; }
+    inline bool isBlack(Coord c) const { return isBlack(at(c)); }
+    inline static bool isEmpty(Piece p) { return !p; }
+    inline static bool isEmpty(Color c) { return !c; }
+    inline bool isEmpty(Coord c) const { return isEmpty(at(c)); }
+    inline static bool isPawn(Piece p) { return qAbs<int>(p) == 1; }
+    inline bool isPawn(Coord c) const { return isPawn(at(c)); }
+    inline static bool isKing(Piece p) { return qAbs<int>(p) == 2; }
+    inline bool isKing(Coord c) const { return isKing(at(c)); }
+
+    inline static Color color(Piece p) { return p > 0 ? White : p < 0 ? Black : None; }
+    inline Color color(Coord c) const { return color(at(c)); }
 
     HexGrid();
 
@@ -65,22 +87,21 @@ public:
     QList<Coord> neighbours(int x, int y) const { return neighbours(Coord {x, y}); }
     QList<Coord> neighbours(Coord c) const;
 
-    const QList<Coord> possibleMoves(int x, int y) const;
-    const QList<Coord> possibleMoves(Coord c) const { return possibleMoves(c.x, c.y); }
+    const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
+    const QList<Move> possibleMoves(HexGrid::Coord c) const;
 
 public slots:
     bool movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord);
 
 private:
     void computeValidMoves(HexGrid::Color col);
+    QList<Move> dfs(HexGrid::Coord c, HexGrid::Move move = Move { -1, -1}) const;
+
 
     int _size = 0;
     QHash<Coord, Piece> grid;
 
-    QHash<Coord, QList<Coord>> validMoves;
+    QHash<Coord, QList<Move>> validMoves;
 };
-
-QDebug operator<<(QDebug dbg, const HexGrid::Coord &coord);
-uint qHash(const HexGrid::Coord &c);
 
 #endif

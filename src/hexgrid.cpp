@@ -70,7 +70,7 @@ HexGrid::movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord)
     computeValidMoves(color(at(newCoord)));
 }
 
-QList< HexGrid::Coord >
+QList<HexGrid::Coord>
 HexGrid::neighbours(HexGrid::Coord c) const
 {
     static QHash<Coord, QList<Coord>> cache;
@@ -90,15 +90,65 @@ HexGrid::neighbours(HexGrid::Coord c) const
 }
 
 
-const QList< HexGrid::Coord >
-HexGrid::possibleMoves(int x, int y) const
+const QList<HexGrid::Move>
+HexGrid::possibleMoves(Coord c) const
 {
-    QList<HexGrid::Coord> list;
-    if (x + 1 < size()) list << Coord {x + 1, y};
-    if (y + 1 < size()) list << Coord {x, y + 1};
-    if (x + 1 < size() && y + 1 < size()) list << Coord {x + 1, y + 1};
+    if (isEmpty(c)) return QList<Move> {};
 
-    return list;
+    QList<Move> moves = dfs(c);
+
+    foreach (Move move, moves) {
+        qDebug() << move.path;
+    }
+
+    if (!moves.empty()) return moves;
+
+    foreach (Coord n, neighbours(c)) {
+        if (isEmpty(n)) {
+            Move m {c};
+            m.path << n;
+
+            moves << m;
+        }
+    }
+
+    return moves;
+}
+
+QList<HexGrid::Move>
+HexGrid::dfs(Coord c, Move move) const
+{
+    static QList<Move> best_moves;
+    static Color col;
+    if (move.from == Coord { -1, -1}) {
+        best_moves.clear();
+        move.from = c;
+        col = color(c);
+    }
+
+    foreach (Coord n, neighbours(c)) {
+        // different colors
+        if (col == -color(n) && !move.taken.contains(n)) {
+            Coord j = c + (n - c) * 2;
+            // skip if !(onGrid && (empty || startingPos))
+            if (!grid.contains(j) || !isEmpty(j) && move.from != j) continue;
+
+            Move newMove(move);
+
+            newMove.path << j;
+            newMove.taken << n;
+
+            if (best_moves.empty() || newMove.path.size() == best_moves.at(0).path.size()) {
+                best_moves << newMove;
+            } else if (newMove.path.size() > best_moves.at(0).path.size()) {
+                best_moves.clear();
+                best_moves << newMove;
+            }
+
+            dfs(j, newMove);
+        }
+    }
+    return best_moves;
 }
 
 QDebug
