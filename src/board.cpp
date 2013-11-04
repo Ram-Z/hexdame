@@ -64,6 +64,8 @@ Board::Board()
     rotate(180);
     setScene(&scene);
 
+    validMoves = grid.computeValidMoves(HexGrid::White);
+
     // connect signals
     connect(this, SIGNAL(playerMoved(HexGrid::Coord, HexGrid::Coord)),
             &grid, SLOT(movePiece(HexGrid::Coord, HexGrid::Coord)));
@@ -79,11 +81,9 @@ Board::mousePressEvent(QMouseEvent *event)
     foreach (QGraphicsItem * item, items(event->pos())) {
         if (item->type() == PieceItem) {
             piece = qgraphicsitem_cast<Piece *>(item);
-            qDebug() << piece;
         }
         if (item->type() == HexItem) {
             hex = qgraphicsitem_cast<Hex *>(item);
-            qDebug() << hex;
         }
     }
 
@@ -94,7 +94,7 @@ Board::mousePressEvent(QMouseEvent *event)
         // draw it on top
         hexFrom->setZValue(1);
 
-        QList<HexGrid::Move> moves = grid.possibleMoves(piece->coord());
+        QList<HexGrid::Move> moves = validMoves.value(hexFrom->coord());
         lines = new QGraphicsItemGroup();
         foreach (HexGrid::Move move, moves) {
             QPointF from = map.value(move.from)->pos();
@@ -133,7 +133,6 @@ Board::mouseReleaseEvent(QMouseEvent *event)
         }
         if (item->type() == HexItem) {
             hex = qgraphicsitem_cast<Hex *>(item);
-            qDebug() << hex;
         }
     }
 
@@ -149,6 +148,8 @@ Board::mouseReleaseEvent(QMouseEvent *event)
                 selectedPiece->setParentItem(hex);
 
                 emit playerMoved(oldCoord, newCoord);
+
+                validMoves = grid.computeValidMoves((HexGrid::Color) -grid.color(newCoord));
 #ifndef ALL_MOVES
             }
 #endif

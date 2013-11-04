@@ -64,6 +64,7 @@ private:
     QList<Hex*> dests;
 
     HexGrid grid;
+    QHash< HexGrid::Coord, QList<HexGrid::Move> > validMoves;
 };
 
 #endif

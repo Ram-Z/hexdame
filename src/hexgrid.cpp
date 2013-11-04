@@ -33,11 +33,11 @@ HexGrid::canJump(int x, int y) const
     }
 }
 
-void
+QHash<HexGrid::Coord, QList<HexGrid::Move>>
 HexGrid::computeValidMoves(Color col)
 {
     int maxMoves = 0;
-    validMoves.clear();
+    QHash<Coord, QList<Move>> validMoves;
 
     foreach (Coord from, coords()) {
         Piece p = at(from);
@@ -62,6 +62,8 @@ HexGrid::computeValidMoves(Color col)
             qDebug() << v.from << v.path;
         }
     }
+
+    return validMoves;
 }
 
 bool

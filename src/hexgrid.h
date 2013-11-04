@@ -90,11 +90,11 @@ public:
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
     const QList<Move> possibleMoves(HexGrid::Coord c) const;
 
+    QHash< Coord, QList< Move > > computeValidMoves(HexGrid::Color col);
 public slots:
     bool movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord);
 
 private:
-    void computeValidMoves(HexGrid::Color col);
     QList<Move> dfs(HexGrid::Coord c, HexGrid::Move move = Move { -1, -1}) const;
 
 
