@@ -7,20 +7,30 @@
 
 #include <QtDebug>
 
-Board::Hex::Hex(QGraphicsItem *parent)
+Board::Hex::Hex(HexGrid::Coord c, QGraphicsItem *parent)
     : QGraphicsPolygonItem(parent)
+    , _coord(c)
 {
     QPolygonF p;
     for (qreal theta = 0.0; theta < 2 * M_PI; theta += M_PI / 3) {
         p << QPointF(radius * qCos(theta), radius * qSin(theta));
     }
     setPolygon(p);
+
+    static const qreal delta_x = radius + radius * qCos(M_PI / 3);
+    static const qreal delta_y = radius * qSin(M_PI / 3);
+
+    qreal new_x = c.x * delta_x - c.y * delta_x;
+    qreal new_y = (c.x + c.y) * delta_y;
+
+    setPos(new_x,new_y);
 }
 
 Board::Piece::Piece(HexGrid::Piece c, QGraphicsItem *parent)
     : QGraphicsEllipseItem(parent)
 {
     static const float r = radius * 0.6;
+
     if (c == HexGrid::WhitePawn)
         setBrush(QBrush(Qt::gray));
     else if (c == HexGrid::BlackPawn)
@@ -33,30 +43,20 @@ Board::Piece::Piece(HexGrid::Piece c, QGraphicsItem *parent)
 Board::Board()
     : QGraphicsView()
 {
-    static const qreal delta_x = radius + radius * qCos(M_PI / 3);
-    static const qreal delta_y = radius * qSin(M_PI / 3);
-
     foreach (HexGrid::Coord c, grid.coords()) {
-        qreal new_x = c.x * delta_x - c.y * delta_x;
-        qreal new_y = (c.x + c.y) * delta_y;
-
-        Hex *h = new Hex();
-        h->setPos(new_x, new_y);
-
-#if 1   // add text coords
-        QGraphicsTextItem *t = scene.addText(QString("{%1,%2}").arg(c.x).arg(c.y));
-        t->setPos(new_x, new_y);
-        t->setZValue(20);
-        t->rotate(180);
-#endif
-
-        itemToCoord[h] = c;
-        coordToItem[c] = h;
+        Hex *h = new Hex(c);
+        map[c] = h;
 
         HexGrid::Piece piece = grid.at(c);
         if (piece != HexGrid::Empty) {
             Piece *p = new Piece(piece, h);
         }
+
+#if 1   // add text coords
+        QGraphicsTextItem *t = new QGraphicsTextItem(QString("{%1,%2}").arg(c.x).arg(c.y), h);
+        t->setZValue(1);
+        t->rotate(180);
+#endif
 
         scene.addItem(h);
     }
@@ -94,24 +94,25 @@ Board::mousePressEvent(QMouseEvent *event)
         // draw it on top
         hexFrom->setZValue(1);
 
-        QList<HexGrid::Move> moves = grid.possibleMoves(itemToCoord.value(hex));
+        QList<HexGrid::Move> moves = grid.possibleMoves(piece->coord());
         lines = new QGraphicsItemGroup();
         foreach (HexGrid::Move move, moves) {
-            QPointF from = coordToItem.value(move.from)->pos();
+            QPointF from = map.value(move.from)->pos();
             QPointF to;
             QColor col(qrand() % 255, qrand() % 255, qrand() % 255);
             foreach (HexGrid::Coord c, move.path) {
-                to = coordToItem.value(c)->pos();
+                to = map.value(c)->pos();
 
                 QGraphicsLineItem *line = new QGraphicsLineItem(QLineF(from, to));
                 line->setPen(col);
 
                 lines->addToGroup(line);
 
-                from = coordToItem.value(c)->pos();
+                from = map.value(c)->pos();
 
-                Hex *dest = qgraphicsitem_cast<Hex *>(coordToItem.value(move.path.last()));
+                Hex *dest = qgraphicsitem_cast<Hex *>(map.value(move.path.last()));
                 dest->setBrush(Qt::Dense1Pattern);
+                dests << dest;
             }
             scene.addItem(lines);
         }
@@ -138,8 +139,8 @@ Board::mouseReleaseEvent(QMouseEvent *event)
 
     if (selectedPiece) {
         if (hex && !piece) {
-            HexGrid::Coord oldCoord = itemToCoord.value(hexFrom);
-            HexGrid::Coord newCoord = itemToCoord.value(hex);
+            HexGrid::Coord oldCoord = hexFrom->coord();
+            HexGrid::Coord newCoord = hex->coord();
 
             selectedPiece->setParentItem(hex);
 
@@ -155,6 +156,9 @@ Board::mouseReleaseEvent(QMouseEvent *event)
         selectedPiece = 0;
 
         scene.removeItem(lines);
+        foreach (Hex* h, dests) {
+            h->setBrush(Qt::NoBrush);
+        }
         delete lines;
     }
 }
