@@ -114,8 +114,8 @@ Board::mousePressEvent(QMouseEvent *event)
                 dest->setBrush(Qt::Dense1Pattern);
                 dests << dest;
             }
-            scene.addItem(lines);
         }
+        scene.addItem(lines);
     }
 }
 
