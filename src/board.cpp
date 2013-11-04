@@ -139,12 +139,19 @@ Board::mouseReleaseEvent(QMouseEvent *event)
 
     if (selectedPiece) {
         if (hex && !piece) {
-            HexGrid::Coord oldCoord = hexFrom->coord();
-            HexGrid::Coord newCoord = hex->coord();
+//#define ALL_MOVES
+#ifndef ALL_MOVES
+            if (dests.contains(hex)) {
+#endif
+                HexGrid::Coord oldCoord = hexFrom->coord();
+                HexGrid::Coord newCoord = hex->coord();
 
-            selectedPiece->setParentItem(hex);
+                selectedPiece->setParentItem(hex);
 
-            emit playerMoved(oldCoord, newCoord);
+                emit playerMoved(oldCoord, newCoord);
+#ifndef ALL_MOVES
+            }
+#endif
         }
 
         selectedPiece->setPos(0.0, 0.0);
@@ -159,6 +166,7 @@ Board::mouseReleaseEvent(QMouseEvent *event)
         foreach (Hex* h, dests) {
             h->setBrush(Qt::NoBrush);
         }
+        dests.clear();
         delete lines;
     }
 }
