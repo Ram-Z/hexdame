@@ -90,7 +90,7 @@ public:
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
     const QList<Move> possibleMoves(HexGrid::Coord c) const;
 
-    QHash< Coord, QList< Move > > computeValidMoves(HexGrid::Color col);
+    QHash< Coord, QList< Move > > computeValidMoves(HexGrid::Color col = None);
 public slots:
     bool movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord);
 

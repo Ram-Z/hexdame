@@ -64,7 +64,7 @@ Board::Board()
     rotate(180);
     setScene(&scene);
 
-    validMoves = grid.computeValidMoves(HexGrid::White);
+    validMoves = grid.computeValidMoves();
 
     // connect signals
     connect(this, SIGNAL(playerMoved(HexGrid::Coord, HexGrid::Coord)),
@@ -138,7 +138,7 @@ Board::mouseReleaseEvent(QMouseEvent *event)
 
     if (selectedPiece) {
         if (hex && !piece) {
-//#define ALL_MOVES
+#define ALL_MOVES
 #ifndef ALL_MOVES
             if (dests.contains(hex)) {
 #endif
@@ -149,7 +149,7 @@ Board::mouseReleaseEvent(QMouseEvent *event)
 
                 emit playerMoved(oldCoord, newCoord);
 
-                validMoves = grid.computeValidMoves((HexGrid::Color) -grid.color(newCoord));
+                validMoves = grid.computeValidMoves();
 #ifndef ALL_MOVES
             }
 #endif

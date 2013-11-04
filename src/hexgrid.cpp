@@ -36,8 +36,13 @@ HexGrid::canJump(int x, int y) const
 QHash<HexGrid::Coord, QList<HexGrid::Move>>
 HexGrid::computeValidMoves(Color col)
 {
-    int maxMoves = 0;
     QHash<Coord, QList<Move>> validMoves;
+    if (col == None) {
+        validMoves.unite(computeValidMoves(White));
+        validMoves.unite(computeValidMoves(Black));
+        return validMoves;
+    }
+    int maxMoves = 0;
 
     foreach (Coord from, coords()) {
         Piece p = at(from);
@@ -74,8 +79,6 @@ HexGrid::movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord)
         rat(newCoord) = at(oldCoord);
         rat(oldCoord) = Empty;
     }
-
-    computeValidMoves(color(newCoord));
 }
 
 QList<HexGrid::Coord>
