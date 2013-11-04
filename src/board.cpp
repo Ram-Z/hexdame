@@ -75,6 +75,7 @@ void
 Board::mousePressEvent(QMouseEvent *event)
 {
     QGraphicsView::mousePressEvent(event);
+    if (event->button() == Qt::RightButton) return;
 
     Hex *hex = 0;
     Piece *piece = 0;
@@ -123,6 +124,7 @@ void
 Board::mouseReleaseEvent(QMouseEvent *event)
 {
     QGraphicsView::mouseReleaseEvent(event);
+    if (event->button() == Qt::RightButton) return;
 
     Hex *hex = 0;
     Piece *piece = 0;
