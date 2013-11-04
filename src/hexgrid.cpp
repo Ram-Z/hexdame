@@ -36,24 +36,30 @@ HexGrid::canJump(int x, int y) const
 void
 HexGrid::computeValidMoves(Color col)
 {
-    static int jump = 0;
+    int maxMoves = 0;
+    validMoves.clear();
+
     foreach (Coord from, coords()) {
         Piece p = at(from);
         if (color(p) != col) continue;
 
         if (isPawn(p)) {
-            foreach (Coord to, neighbours(from)) {
-                if (!jump) {
-                    QList<Coord> forward;
-                    forward << Coord {1, 0} << Coord {1, 1} << Coord {0, 1};
-                    if (at(to) == Empty) {
-                    }
-                }
+            QList<Move> moves = possibleMoves(from);
+            if (moves.empty()) continue;
 
-                if (isBlack(p) && isWhite(at(to))) {
-
-                }
+            if (moves.at(0).taken.size() > maxMoves) {
+                maxMoves = moves.at(0).taken.size();
+                validMoves.clear();
+                validMoves[from] = moves;
+            } else if (moves.at(0).taken.size() == maxMoves) {
+                validMoves[from] = moves;
             }
+        }
+    }
+
+    foreach (QList<Move> vl, validMoves) {
+        foreach (Move v, vl) {
+            qDebug() << v.from << v.path;
         }
     }
 }
@@ -67,7 +73,7 @@ HexGrid::movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord)
         rat(oldCoord) = Empty;
     }
 
-    computeValidMoves(color(at(newCoord)));
+    computeValidMoves(color(newCoord));
 }
 
 QList<HexGrid::Coord>
@@ -97,16 +103,24 @@ HexGrid::possibleMoves(Coord c) const
 
     QList<Move> moves = dfs(c);
 
-    foreach (Move move, moves) {
-        qDebug() << move.path;
-    }
+//    foreach (Move move, moves) {
+//        qDebug() << move.path;
+//    }
 
     if (!moves.empty()) return moves;
 
-    foreach (Coord n, neighbours(c)) {
-        if (isEmpty(n)) {
+    QList<Coord> tos;
+    if (color(c) == Black) {
+        tos << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
+    } else if (color(c) == White) {
+        tos << Coord {1, 0} << Coord {1, 1} << Coord {0, 1};
+    }
+
+    foreach (Coord n, tos) {
+        Coord to = c + n;
+        if (grid.contains(to) && isEmpty(to)) {
             Move m {c};
-            m.path << n;
+            m.path << to;
 
             moves << m;
         }
