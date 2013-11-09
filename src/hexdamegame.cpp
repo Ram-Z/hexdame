@@ -17,9 +17,9 @@
  *
  */
 
-#include "hexgrid.h"
+#include "hexdamegame.h"
 
-HexGrid::HexGrid()
+HexdameGame::HexdameGame()
     : QObject()
     , _size(9)
 {
@@ -39,7 +39,7 @@ HexGrid::HexGrid()
 }
 
 bool
-HexGrid::canJump(int x, int y) const
+HexdameGame::canJump(int x, int y) const
 {
     for (int dx = -1; dx <= 1; ++dx) {
         for (int dy = -1; dy <= 1; ++dy) {
@@ -50,8 +50,8 @@ HexGrid::canJump(int x, int y) const
     }
 }
 
-QHash<HexGrid::Coord, QList<HexGrid::Move>>
-HexGrid::computeValidMoves(Color col)
+QHash<HexdameGame::Coord, QList<HexdameGame::Move>>
+HexdameGame::computeValidMoves(Color col)
 {
     QHash<Coord, QList<Move>> validMoves;
     if (col == None) {
@@ -89,7 +89,7 @@ HexGrid::computeValidMoves(Color col)
 }
 
 bool
-HexGrid::movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord)
+HexdameGame::movePiece(HexdameGame::Coord oldCoord, HexdameGame::Coord newCoord)
 {
     //TODO check if valid move
     if (oldCoord != newCoord) {
@@ -98,8 +98,8 @@ HexGrid::movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord)
     }
 }
 
-QList<HexGrid::Coord>
-HexGrid::neighbours(HexGrid::Coord c) const
+QList<HexdameGame::Coord>
+HexdameGame::neighbours(HexdameGame::Coord c) const
 {
     static QHash<Coord, QList<Coord>> cache;
     if (cache.contains(c)) return cache.value(c);
@@ -118,8 +118,8 @@ HexGrid::neighbours(HexGrid::Coord c) const
 }
 
 
-const QList<HexGrid::Move>
-HexGrid::possibleMoves(Coord c) const
+const QList<HexdameGame::Move>
+HexdameGame::possibleMoves(Coord c) const
 {
     if (isEmpty(c)) return QList<Move> {};
 
@@ -151,8 +151,8 @@ HexGrid::possibleMoves(Coord c) const
     return moves;
 }
 
-QList<HexGrid::Move>
-HexGrid::dfs(Coord c, Move move) const
+QList<HexdameGame::Move>
+HexdameGame::dfs(Coord c, Move move) const
 {
     static QList<Move> best_moves;
     static Color col;
@@ -188,14 +188,14 @@ HexGrid::dfs(Coord c, Move move) const
 }
 
 QDebug
-operator<<(QDebug dbg, const HexGrid::Coord &coord)
+operator<<(QDebug dbg, const HexdameGame::Coord &coord)
 {
     dbg.nospace() << "Coord(" << coord.x << "," << coord.y << ")";
     return dbg.space();
 }
 
 uint
-qHash(const HexGrid::Coord &c)
+qHash(const HexdameGame::Coord &c)
 {
     uint h1 = qHash(c.x);
     uint h2 = qHash(c.y);

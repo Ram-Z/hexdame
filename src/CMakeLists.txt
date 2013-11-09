@@ -1,5 +1,5 @@
 FILE (GLOB_RECURSE project_SRCS *.cpp *.cxx *.cc *.C *.c *.h *.hpp)
-SET (project_MOC_HEADERS app.h board.h hexgrid.h)
+SET (project_MOC_HEADERS app.h hexdameview.h hexdamegame.h)
 SET (project_LIBS ${QT_LIBRARIES} ${Log4Cxx_LIBRARIES})
 SET (project_BIN ${PROJECT_NAME})
 

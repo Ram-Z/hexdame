@@ -17,14 +17,14 @@
  *
  */
 
-#include "board.h"
+#include "hexdameview.h"
 
 #include <qmath.h>
 #include <QMouseEvent>
 
 #include <QtDebug>
 
-Board::Hex::Hex(HexGrid::Coord c, QGraphicsItem *parent)
+HexdameView::Hex::Hex(HexdameGame::Coord c, QGraphicsItem *parent)
     : QGraphicsPolygonItem(parent)
     , _coord(c)
 {
@@ -43,29 +43,29 @@ Board::Hex::Hex(HexGrid::Coord c, QGraphicsItem *parent)
     setPos(new_x,new_y);
 }
 
-Board::Piece::Piece(HexGrid::Piece c, QGraphicsItem *parent)
+HexdameView::Piece::Piece(HexdameGame::Piece c, QGraphicsItem *parent)
     : QGraphicsEllipseItem(parent)
 {
     static const float r = radius * 0.6;
 
-    if (c == HexGrid::WhitePawn)
+    if (c == HexdameGame::WhitePawn)
         setBrush(QBrush(Qt::gray));
-    else if (c == HexGrid::BlackPawn)
+    else if (c == HexdameGame::BlackPawn)
         setBrush(QBrush(Qt::black));
 
     setRect(-r, -r, 2 * r, 2 * r);
     setFlags(ItemIsSelectable | ItemIsMovable);
 }
 
-Board::Board()
+HexdameView::HexdameView()
     : QGraphicsView()
 {
-    foreach (HexGrid::Coord c, grid.coords()) {
+    foreach (HexdameGame::Coord c, grid.coords()) {
         Hex *h = new Hex(c);
         map[c] = h;
 
-        HexGrid::Piece piece = grid.at(c);
-        if (piece != HexGrid::Empty) {
+        HexdameGame::Piece piece = grid.at(c);
+        if (piece != HexdameGame::Empty) {
             Piece *p = new Piece(piece, h);
         }
 
@@ -84,12 +84,12 @@ Board::Board()
     validMoves = grid.computeValidMoves();
 
     // connect signals
-    connect(this, SIGNAL(playerMoved(HexGrid::Coord, HexGrid::Coord)),
-            &grid, SLOT(movePiece(HexGrid::Coord, HexGrid::Coord)));
+    connect(this, SIGNAL(playerMoved(HexdameGame::Coord, HexdameGame::Coord)),
+            &grid, SLOT(movePiece(HexdameGame::Coord, HexdameGame::Coord)));
 }
 
 void
-Board::mousePressEvent(QMouseEvent *event)
+HexdameView::mousePressEvent(QMouseEvent *event)
 {
     QGraphicsView::mousePressEvent(event);
     if (event->button() == Qt::RightButton) return;
@@ -112,13 +112,13 @@ Board::mousePressEvent(QMouseEvent *event)
         // draw it on top
         hexFrom->setZValue(1);
 
-        QList<HexGrid::Move> moves = validMoves.value(hexFrom->coord());
+        QList<HexdameGame::Move> moves = validMoves.value(hexFrom->coord());
         lines = new QGraphicsItemGroup();
-        foreach (HexGrid::Move move, moves) {
+        foreach (HexdameGame::Move move, moves) {
             QPointF from = map.value(move.from)->pos();
             QPointF to;
             QColor col(qrand() % 255, qrand() % 255, qrand() % 255);
-            foreach (HexGrid::Coord c, move.path) {
+            foreach (HexdameGame::Coord c, move.path) {
                 to = map.value(c)->pos();
 
                 QGraphicsLineItem *line = new QGraphicsLineItem(QLineF(from, to));
@@ -138,7 +138,7 @@ Board::mousePressEvent(QMouseEvent *event)
 }
 
 void
-Board::mouseReleaseEvent(QMouseEvent *event)
+HexdameView::mouseReleaseEvent(QMouseEvent *event)
 {
     QGraphicsView::mouseReleaseEvent(event);
     if (event->button() == Qt::RightButton) return;
@@ -161,8 +161,8 @@ Board::mouseReleaseEvent(QMouseEvent *event)
 #ifndef ALL_MOVES
             if (dests.contains(hex)) {
 #endif
-                HexGrid::Coord oldCoord = hexFrom->coord();
-                HexGrid::Coord newCoord = hex->coord();
+                HexdameGame::Coord oldCoord = hexFrom->coord();
+                HexdameGame::Coord newCoord = hex->coord();
 
                 selectedPiece->setParentItem(hex);
 

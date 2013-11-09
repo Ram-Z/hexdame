@@ -17,16 +17,16 @@
  *
  */
 
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef HEXDAMEVIEW_H
+#define HEXDAMEVIEW_H
 
-#include "hexgrid.h"
+#include "hexdamegame.h"
 
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 
-class Board : public QGraphicsView
+class HexdameView : public QGraphicsView
 {
     Q_OBJECT
 
@@ -41,20 +41,20 @@ class Board : public QGraphicsView
     {
     public:
         enum { Type = UserType + 1 };
-        explicit Hex(HexGrid::Coord c, QGraphicsItem *parent = 0);
-        inline const HexGrid::Coord &coord() const { return _coord; }
+        explicit Hex(HexdameGame::Coord c, QGraphicsItem *parent = 0);
+        inline const HexdameGame::Coord &coord() const { return _coord; }
 
         int type() const { return Type; }
     private:
-        HexGrid::Coord _coord;
+        HexdameGame::Coord _coord;
     };
 
     class Piece : public QGraphicsEllipseItem
     {
     public:
         enum { Type = UserType + 2 };
-        explicit Piece(HexGrid::Piece c, QGraphicsItem *parent);
-        inline const HexGrid::Coord &coord() const {
+        explicit Piece(HexdameGame::Piece c, QGraphicsItem *parent);
+        inline const HexdameGame::Coord &coord() const {
             return qgraphicsitem_cast<Hex*>(parentItem())->coord();
         }
 
@@ -62,10 +62,10 @@ class Board : public QGraphicsView
     };
 
 public:
-    explicit Board();
+    explicit HexdameView();
 
 signals:
-    void playerMoved(HexGrid::Coord oldCoord, HexGrid::Coord newCoord);
+    void playerMoved(HexdameGame::Coord oldCoord, HexdameGame::Coord newCoord);
 
 protected:
     void mouseReleaseEvent(QMouseEvent *event);
@@ -74,14 +74,14 @@ protected:
 private:
     QGraphicsScene scene;
 
-    QHash<HexGrid::Coord, Hex *> map;
+    QHash<HexdameGame::Coord, Hex *> map;
     Hex *hexFrom = 0;
     Piece *selectedPiece = 0;
     QGraphicsItemGroup *lines;
     QList<Hex*> dests;
 
-    HexGrid grid;
-    QHash< HexGrid::Coord, QList<HexGrid::Move> > validMoves;
+    HexdameGame grid;
+    QHash< HexdameGame::Coord, QList<HexdameGame::Move> > validMoves;
 };
 
 #endif

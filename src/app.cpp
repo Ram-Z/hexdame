@@ -31,8 +31,8 @@
 
 #include "app.h"
 #include "appinfo.h"
-#include "board.h"
-#include "hexgrid.h"
+#include "hexdameview.h"
+#include "hexdamegame.h"
 
 namespace
 {
@@ -230,7 +230,7 @@ App::initGUI()
     // Construct the main window
     _mainwindow.reset(new QMainWindow);
 
-    Board *b = new Board();
+    HexdameView *b = new HexdameView();
     _mainwindow->setCentralWidget(b);
 
     // Setup the central widget

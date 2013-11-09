@@ -17,12 +17,12 @@
  *
  */
 
-#ifndef HEXGRID_H
-#define HEXGRID_H
+#ifndef HEXDAMEGAME_H
+#define HEXDAMEGAME_H
 
 #include <QtDebug> // needed for Q_ASSERT
 
-class HexGrid : public QObject
+class HexdameGame : public QObject
 {
     Q_OBJECT
 
@@ -57,9 +57,9 @@ public:
         friend const Coord operator*(Coord c, int i) { return i * c; }
         Coord &operator*=(int i) { x *= i; y *= i; return *this; }
 
-        friend QDebug operator<<(QDebug dbg, const HexGrid::Coord &coord);
+        friend QDebug operator<<(QDebug dbg, const HexdameGame::Coord &coord);
 
-        friend uint qHash(const HexGrid::Coord &c);
+        friend uint qHash(const HexdameGame::Coord &c);
     };
 
     struct Move {
@@ -87,7 +87,7 @@ public:
     inline static Color color(Piece p) { return p > 0 ? White : p < 0 ? Black : None; }
     inline Color color(Coord c) const { return color(at(c)); }
 
-    HexGrid();
+    HexdameGame();
 
     inline const int size() const { return _size; }
 
@@ -105,14 +105,14 @@ public:
     QList<Coord> neighbours(Coord c) const;
 
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
-    const QList<Move> possibleMoves(HexGrid::Coord c) const;
+    const QList<Move> possibleMoves(HexdameGame::Coord c) const;
 
-    QHash< Coord, QList< Move > > computeValidMoves(HexGrid::Color col = None);
+    QHash< Coord, QList< Move > > computeValidMoves(HexdameGame::Color col = None);
 public slots:
-    bool movePiece(HexGrid::Coord oldCoord, HexGrid::Coord newCoord);
+    bool movePiece(HexdameGame::Coord oldCoord, HexdameGame::Coord newCoord);
 
 private:
-    QList<Move> dfs(HexGrid::Coord c, HexGrid::Move move = Move { -1, -1}) const;
+    QList<Move> dfs(HexdameGame::Coord c, HexdameGame::Move move = Move { -1, -1}) const;
 
 
     int _size = 0;
