@@ -52,27 +52,27 @@ public:
     inline const int size() const { return _size; }
 
     const Piece at(int x, int y) const { return at(Coord {x, y}); }
-    const Piece at(Coord c) const { Q_ASSERT(grid.contains(c)); return grid.value(c); }
+    const Piece at(const Coord &c) const { Q_ASSERT(grid.contains(c)); return grid.value(c); }
     Piece &rat(int x, int y) { return grid[Coord {x, y}]; }
-    Piece &rat(Coord c) { return grid[c]; }
+    Piece &rat(const Coord &c) { return grid[c]; }
 
-    QList<Coord> coords() { return grid.keys(); }
+    QList<Coord> coords() const { return grid.keys(); }
 
     bool canJump(int x, int y) const;
-    bool canJump(Coord c) const { return canJump(c.x, c.y); }
+    bool canJump(const Coord &c) const { return canJump(c.x, c.y); }
 
     QList<Coord> neighbours(int x, int y) const { return neighbours(Coord {x, y}); }
-    QList<Coord> neighbours(Coord c) const;
+    QList<Coord> neighbours(const Coord &c) const;
 
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
-    const QList<Move> possibleMoves(Coord c) const;
+    const QList<Move> possibleMoves(const Coord &c) const;
 
     QHash< Coord, QList< Move > > computeValidMoves(Color col = None);
 public slots:
-    bool movePiece(Coord oldCoord, Coord newCoord);
+    bool movePiece(const Coord &oldCoord, const Coord &newCoord);
 
 private:
-    QList<Move> dfs(Coord c, Move move = Move { -1, -1}) const;
+    QList<Move> dfs(const Coord &c, Move move = Move { -1, -1}) const;
 
     int _size = 0;
     QHash<Coord, Piece> grid;
