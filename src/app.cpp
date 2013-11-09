@@ -17,20 +17,22 @@
  *
  */
 
-#include <iostream>
-#include <cstdlib>
 #include <cctype>
+#include <cstdlib>
 #include <exception>
-#include <stdexcept>
+#include <iostream>
 #include <memory>
-#include <log4cxx/logger.h>
-#include <log4cxx/level.h>
+#include <stdexcept>
+
 #include <log4cxx/consoleappender.h>
+#include <log4cxx/level.h>
+#include <log4cxx/logger.h>
 #include <log4cxx/patternlayout.h>
+
 #include "app.h"
 #include "appinfo.h"
-#include "hexgrid.h"
 #include "board.h"
+#include "hexgrid.h"
 
 namespace
 {
@@ -227,26 +229,20 @@ App::initGUI()
 {
     // Construct the main window
     _mainwindow.reset(new QMainWindow);
-    _mainwindow->setCentralWidget(new QWidget);
+
+    Board *b = new Board();
+    _mainwindow->setCentralWidget(b);
 
     // Setup the central widget
-    QWidget *centralwidget = _mainwindow->centralWidget();
+    // TODO test this on a non-tiling WM
     QDesktopWidget *desktopwidget = desktop();
     int preferredwidth = 1024;
     int preferredheight = 768;
     int leftmargin = (desktopwidget->width() - preferredwidth) / 2;
     int topmargin  = (desktopwidget->height() - preferredheight) / 2;
 
-    Board *b = new Board();
-    b->show();
-    _mainwindow->setCentralWidget(b);
-
+    QWidget *centralwidget = _mainwindow->centralWidget();
     centralwidget->setWindowTitle(getProjectName());
-    centralwidget->setFixedSize(preferredwidth, preferredheight);
-    std::auto_ptr<QLabel> label(new QLabel("Hello world!"));
-    std::auto_ptr<QGridLayout> layout(new QGridLayout);
-    layout->addWidget(label.release(), 0, 0, Qt::AlignCenter);
-    centralwidget->setLayout(layout.release());
 
     // Setup the toolbars
     // ...
@@ -261,20 +257,9 @@ App::initGUI()
 }
 
 void
-App::interactiveMain()
-{
-    std::cout << "Hello world!" << std::endl;
-}
-
-void
-App::consoleMain()
-{
-    std::cout << "Hello world!" << std::endl;
-}
-
-void
 App::printHelpMessage()
 {
+    //TODO replace with some options of my own
     std::cout << "Usage: " << getProjectInvocation() << " [options]" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "    --help                       Displays this help message." << std::endl;
