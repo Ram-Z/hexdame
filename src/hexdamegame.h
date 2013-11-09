@@ -20,6 +20,8 @@
 #ifndef HEXDAMEGAME_H
 #define HEXDAMEGAME_H
 
+#include "commondefs.h"
+
 #include <QtDebug> // needed for Q_ASSERT
 
 class HexdameGame : public QObject
@@ -27,67 +29,25 @@ class HexdameGame : public QObject
     Q_OBJECT
 
 public:
-    enum Piece {
-        BlackKing = -2,
-        BlackPawn = -1,
-        Empty  = 0,
-        WhitePawn = 1,
-        WhiteKing = 2
-    };
-
-    enum Color {
-        Black = -1,
-        None = 0,
-        White = 1
-    };
-
-    struct Coord {
-        int x, y;
-
-        const bool operator==(Coord c) const { return x == c.x && y == c.y; }
-        const bool operator!=(Coord c) const { return !(*this == c); }
-
-        const Coord operator+(Coord c) const { return Coord {x + c.x, y + c.y}; }
-        Coord &operator+=(Coord c) { x += c.x; y += c.y; return *this; }
-
-        const Coord operator-(Coord c) const { return Coord {x - c.x, y - c.y}; }
-        Coord &operator-=(Coord c) { x -= c.x; y -= c.y; return *this; }
-
-        friend const Coord operator*(int i, Coord c) { return Coord {i * c.x, i * c.y}; }
-        friend const Coord operator*(Coord c, int i) { return i * c; }
-        Coord &operator*=(int i) { x *= i; y *= i; return *this; }
-
-        friend QDebug operator<<(QDebug dbg, const HexdameGame::Coord &coord);
-
-        friend uint qHash(const HexdameGame::Coord &c);
-    };
-
-    struct Move {
-        Coord from;
-        QList<Coord> path;
-        QList<Coord> taken;
-
-        inline const Coord &to() const { return path.last(); }
-    };
-
-    inline static bool isWhite(Piece p) { return p > 0; }
-    inline static bool isWhite(Color c) { return c > 0; }
-    inline bool isWhite(Coord c) const { return isWhite(at(c)); }
-    inline static bool isBlack(Piece p) { return p < 0; }
-    inline static bool isBlack(Color c) { return c < 0; }
-    inline bool isBlack(Coord c) const { return isBlack(at(c)); }
-    inline static bool isEmpty(Piece p) { return !p; }
-    inline static bool isEmpty(Color c) { return !c; }
-    inline bool isEmpty(Coord c) const { return isEmpty(at(c)); }
-    inline static bool isPawn(Piece p) { return qAbs<int>(p) == 1; }
-    inline bool isPawn(Coord c) const { return isPawn(at(c)); }
-    inline static bool isKing(Piece p) { return qAbs<int>(p) == 2; }
-    inline bool isKing(Coord c) const { return isKing(at(c)); }
-
-    inline static Color color(Piece p) { return p > 0 ? White : p < 0 ? Black : None; }
-    inline Color color(Coord c) const { return color(at(c)); }
-
     HexdameGame();
+
+    // convenience functions (some of those could be static)
+    inline bool isWhite(const Piece &p) const { return p > 0; }
+    inline bool isWhite(const Color &c) const { return c > 0; }
+    inline bool isWhite(const Coord &c) const { return isWhite(at(c)); }
+    inline bool isBlack(const Piece &p) const { return p < 0; }
+    inline bool isBlack(const Color &c) const { return c < 0; }
+    inline bool isBlack(const Coord &c) const { return isBlack(at(c)); }
+    inline bool isEmpty(const Piece &p) const { return !p; }
+    inline bool isEmpty(const Color &c) const { return !c; }
+    inline bool isEmpty(const Coord &c) const { return isEmpty(at(c)); }
+    inline bool  isPawn(const Piece &p) const { return qAbs<int>(p) == 1; }
+    inline bool  isPawn(const Coord &c) const { return isPawn(at(c)); }
+    inline bool  isKing(const Piece &p) const { return qAbs<int>(p) == 2; }
+    inline bool  isKing(const Coord &c) const { return isKing(at(c)); }
+
+    inline Color color(const Piece &p) const { return p > 0 ? White : p < 0 ? Black : None; }
+    inline Color color(const Coord &c) const { return color(at(c)); }
 
     inline const int size() const { return _size; }
 
@@ -105,15 +65,14 @@ public:
     QList<Coord> neighbours(Coord c) const;
 
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
-    const QList<Move> possibleMoves(HexdameGame::Coord c) const;
+    const QList<Move> possibleMoves(Coord c) const;
 
-    QHash< Coord, QList< Move > > computeValidMoves(HexdameGame::Color col = None);
+    QHash< Coord, QList< Move > > computeValidMoves(Color col = None);
 public slots:
-    bool movePiece(HexdameGame::Coord oldCoord, HexdameGame::Coord newCoord);
+    bool movePiece(Coord oldCoord, Coord newCoord);
 
 private:
-    QList<Move> dfs(HexdameGame::Coord c, HexdameGame::Move move = Move { -1, -1}) const;
-
+    QList<Move> dfs(Coord c, Move move = Move { -1, -1}) const;
 
     int _size = 0;
     QHash<Coord, Piece> grid;

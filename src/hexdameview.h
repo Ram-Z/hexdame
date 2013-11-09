@@ -37,25 +37,25 @@ class HexdameView : public QGraphicsView
         PieceItem
     };
 
-    class Hex : public QGraphicsPolygonItem
+    class GraphicsHexItem : public QGraphicsPolygonItem
     {
     public:
         enum { Type = UserType + 1 };
-        explicit Hex(HexdameGame::Coord c, QGraphicsItem *parent = 0);
-        inline const HexdameGame::Coord &coord() const { return _coord; }
+        explicit GraphicsHexItem(Coord c, QGraphicsItem *parent = 0);
+        inline const Coord &coord() const { return _coord; }
 
         int type() const { return Type; }
     private:
-        HexdameGame::Coord _coord;
+        Coord _coord;
     };
 
-    class Piece : public QGraphicsEllipseItem
+    class GraphicsPieceItem : public QGraphicsEllipseItem
     {
     public:
         enum { Type = UserType + 2 };
-        explicit Piece(HexdameGame::Piece c, QGraphicsItem *parent);
-        inline const HexdameGame::Coord &coord() const {
-            return qgraphicsitem_cast<Hex*>(parentItem())->coord();
+        explicit GraphicsPieceItem(Color c, QGraphicsItem *parent);
+        inline const Coord &coord() const {
+            return qgraphicsitem_cast<GraphicsHexItem*>(parentItem())->coord();
         }
 
         int type() const { return Type; }
@@ -65,7 +65,7 @@ public:
     explicit HexdameView();
 
 signals:
-    void playerMoved(HexdameGame::Coord oldCoord, HexdameGame::Coord newCoord);
+    void playerMoved(Coord oldCoord, Coord newCoord);
 
 protected:
     void mouseReleaseEvent(QMouseEvent *event);
@@ -74,14 +74,14 @@ protected:
 private:
     QGraphicsScene scene;
 
-    QHash<HexdameGame::Coord, Hex *> map;
-    Hex *hexFrom = 0;
-    Piece *selectedPiece = 0;
+    QHash<Coord, GraphicsHexItem *> map;
+    GraphicsHexItem *hexFrom = 0;
+    GraphicsPieceItem *selectedPiece = 0;
     QGraphicsItemGroup *lines;
-    QList<Hex*> dests;
+    QList<GraphicsHexItem*> dests;
 
     HexdameGame grid;
-    QHash< HexdameGame::Coord, QList<HexdameGame::Move> > validMoves;
+    QHash< Coord, QList<Move> > validMoves;
 };
 
 #endif

@@ -50,7 +50,7 @@ HexdameGame::canJump(int x, int y) const
     }
 }
 
-QHash<HexdameGame::Coord, QList<HexdameGame::Move>>
+QHash<Coord, QList<Move>>
 HexdameGame::computeValidMoves(Color col)
 {
     QHash<Coord, QList<Move>> validMoves;
@@ -89,7 +89,7 @@ HexdameGame::computeValidMoves(Color col)
 }
 
 bool
-HexdameGame::movePiece(HexdameGame::Coord oldCoord, HexdameGame::Coord newCoord)
+HexdameGame::movePiece(Coord oldCoord, Coord newCoord)
 {
     //TODO check if valid move
     if (oldCoord != newCoord) {
@@ -98,8 +98,8 @@ HexdameGame::movePiece(HexdameGame::Coord oldCoord, HexdameGame::Coord newCoord)
     }
 }
 
-QList<HexdameGame::Coord>
-HexdameGame::neighbours(HexdameGame::Coord c) const
+QList<Coord>
+HexdameGame::neighbours(Coord c) const
 {
     static QHash<Coord, QList<Coord>> cache;
     if (cache.contains(c)) return cache.value(c);
@@ -118,7 +118,7 @@ HexdameGame::neighbours(HexdameGame::Coord c) const
 }
 
 
-const QList<HexdameGame::Move>
+const QList<Move>
 HexdameGame::possibleMoves(Coord c) const
 {
     if (isEmpty(c)) return QList<Move> {};
@@ -151,7 +151,7 @@ HexdameGame::possibleMoves(Coord c) const
     return moves;
 }
 
-QList<HexdameGame::Move>
+QList<Move>
 HexdameGame::dfs(Coord c, Move move) const
 {
     static QList<Move> best_moves;
@@ -188,14 +188,14 @@ HexdameGame::dfs(Coord c, Move move) const
 }
 
 QDebug
-operator<<(QDebug dbg, const HexdameGame::Coord &coord)
+operator<<(QDebug dbg, const Coord &coord)
 {
     dbg.nospace() << "Coord(" << coord.x << "," << coord.y << ")";
     return dbg.space();
 }
 
 uint
-qHash(const HexdameGame::Coord &c)
+qHash(const Coord &c)
 {
     uint h1 = qHash(c.x);
     uint h2 = qHash(c.y);

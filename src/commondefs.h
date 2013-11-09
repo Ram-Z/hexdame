@@ -1,0 +1,70 @@
+/*
+ * hexdame: a draughts game played on a hexagonal grid.
+ * Copyright (C) 2013  Samir Benmendil <samir.benmendil@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef COMMONDEFS_H
+#define COMMONDEFS_H
+
+#include <QList>
+
+class QDebug;
+
+enum Piece {
+    BlackKing = -2,
+    BlackPawn = -1,
+    Empty  = 0,
+    WhitePawn = 1,
+    WhiteKing = 2
+};
+
+enum Color {
+    Black = -1,
+    None = 0,
+    White = 1
+};
+
+struct Coord {
+    int x, y;
+
+    bool operator==(const Coord &c) const { return x == c.x && y == c.y; }
+    bool operator!=(const Coord &c) const { return !(*this == c); }
+
+    Coord operator+(const Coord &c) const { return Coord {x + c.x, y + c.y}; }
+    Coord &operator+=(const Coord &c) { x += c.x; y += c.y; return *this; }
+
+    Coord operator-(const Coord &c) const { return Coord {x - c.x, y - c.y}; }
+    Coord &operator-=(const Coord &c) { x -= c.x; y -= c.y; return *this; }
+
+    friend Coord operator*(int i, const Coord &c) { return Coord {i * c.x, i * c.y}; }
+    friend Coord operator*(const Coord &c, int i) { return i * c; }
+    Coord &operator*=(int i) { x *= i; y *= i; return *this; }
+
+    friend QDebug operator<<(QDebug dbg, const Coord &coord);
+
+    friend uint qHash(const Coord &c);
+};
+
+struct Move {
+    Coord from;
+    QList<Coord> path;
+    QList<Coord> taken;
+
+    inline const Coord &to() const { return path.last(); }
+};
+
+#endif // COMMONDEFS_H
