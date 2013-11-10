@@ -66,7 +66,7 @@ HexdameView::HexdameView()
 
         Piece piece = grid.at(c);
         if (piece != Empty) {
-            GraphicsPieceItem *p = new GraphicsPieceItem(grid.color(piece), h);
+            GraphicsPieceItem *p = new GraphicsPieceItem(color(piece), h);
         }
 
 #if 1   // add text coords

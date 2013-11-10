@@ -38,6 +38,19 @@ enum Color {
     White = 1
 };
 
+namespace Hexdame {
+inline Color color(const Piece &p) { return p > 0 ? White : p < 0 ? Black : None; }
+
+inline bool isWhite(const Piece &p) { return p > 0; }
+inline bool isWhite(const Color &c) { return c > 0; }
+inline bool isBlack(const Piece &p) { return p < 0; }
+inline bool isBlack(const Color &c) { return c < 0; }
+inline bool isEmpty(const Piece &p) { return !p; }
+inline bool isEmpty(const Color &c) { return !c; }
+inline bool  isPawn(const Piece &p) { return qAbs<int>(p) == 1; }
+inline bool  isKing(const Piece &p) { return qAbs<int>(p) == 2; }
+}
+
 struct Coord {
     int x, y;
 

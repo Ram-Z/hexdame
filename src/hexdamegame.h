@@ -24,30 +24,14 @@
 
 #include <QtDebug> // needed for Q_ASSERT
 
+using namespace Hexdame;
+
 class HexdameGame : public QObject
 {
     Q_OBJECT
 
 public:
     HexdameGame();
-
-    // convenience functions (some of those could be static)
-    inline bool isWhite(const Piece &p) const { return p > 0; }
-    inline bool isWhite(const Color &c) const { return c > 0; }
-    inline bool isWhite(const Coord &c) const { return isWhite(at(c)); }
-    inline bool isBlack(const Piece &p) const { return p < 0; }
-    inline bool isBlack(const Color &c) const { return c < 0; }
-    inline bool isBlack(const Coord &c) const { return isBlack(at(c)); }
-    inline bool isEmpty(const Piece &p) const { return !p; }
-    inline bool isEmpty(const Color &c) const { return !c; }
-    inline bool isEmpty(const Coord &c) const { return isEmpty(at(c)); }
-    inline bool  isPawn(const Piece &p) const { return qAbs<int>(p) == 1; }
-    inline bool  isPawn(const Coord &c) const { return isPawn(at(c)); }
-    inline bool  isKing(const Piece &p) const { return qAbs<int>(p) == 2; }
-    inline bool  isKing(const Coord &c) const { return isKing(at(c)); }
-
-    inline Color color(const Piece &p) const { return p > 0 ? White : p < 0 ? Black : None; }
-    inline Color color(const Coord &c) const { return color(at(c)); }
 
     inline const int size() const { return _size; }
 
@@ -68,6 +52,16 @@ public:
     const QList<Move> possibleMoves(const Coord &c) const;
 
     QHash< Coord, QList< Move > > computeValidMoves(Color col = None);
+
+    // convenience functions
+    inline bool isWhite(const Coord &c) const { return Hexdame::isWhite(at(c)); }
+    inline bool isBlack(const Coord &c) const { return Hexdame::isBlack(at(c)); }
+    inline bool isEmpty(const Coord &c) const { return Hexdame::isEmpty(at(c)); }
+    inline bool  isPawn(const Coord &c) const { return Hexdame::isPawn(at(c)); }
+    inline bool  isKing(const Coord &c) const { return Hexdame::isKing(at(c)); }
+
+    inline Color color(const Coord &c) const { return Hexdame::color(at(c)); }
+
 public slots:
     bool movePiece(const Coord &oldCoord, const Coord &newCoord);
 

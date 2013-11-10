@@ -62,10 +62,9 @@ HexdameGame::computeValidMoves(Color col)
     int maxMoves = 0;
 
     foreach (Coord from, coords()) {
-        Piece p = at(from);
-        if (color(p) != col) continue;
+        if (color(from) != col) continue;
 
-        if (isPawn(p)) {
+        if (isPawn(from)) {
             QList<Move> moves = possibleMoves(from);
             if (moves.empty()) continue;
 
