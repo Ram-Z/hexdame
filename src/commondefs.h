@@ -69,7 +69,7 @@ struct Coord {
 
     friend QDebug operator<<(QDebug dbg, const Coord &coord);
 
-    friend uint qHash(const Coord &c);
+    friend uint qHash(const Coord &c) { return ((c.x << 16) | (c.x >> 16)) ^ c.y; }
 };
 
 struct Move {

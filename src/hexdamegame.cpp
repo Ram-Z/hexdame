@@ -193,10 +193,3 @@ operator<<(QDebug dbg, const Coord &coord)
     return dbg.space();
 }
 
-uint
-qHash(const Coord &c)
-{
-    uint h1 = qHash(c.x);
-    uint h2 = qHash(c.y);
-    return ((h1 << 16) | (h1 >> 16)) ^ h2;
-}
