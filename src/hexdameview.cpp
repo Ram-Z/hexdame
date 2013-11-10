@@ -43,18 +43,28 @@ HexdameView::GraphicsHexItem::GraphicsHexItem(Coord c, QGraphicsItem *parent)
     setPos(new_x,new_y);
 }
 
-HexdameView::GraphicsPieceItem::GraphicsPieceItem(Color c, QGraphicsItem *parent)
+HexdameView::GraphicsPieceItem::GraphicsPieceItem(Piece state, QGraphicsItem *parent)
     : QGraphicsEllipseItem(parent)
 {
     static const float r = radius * 0.6;
 
-    if (c == White)
-        setBrush(QBrush(Qt::gray));
-    else if (c == Black)
-        setBrush(QBrush(Qt::black));
+    setState(state);
 
     setRect(-r, -r, 2 * r, 2 * r);
     setFlags(ItemIsSelectable | ItemIsMovable);
+}
+
+void HexdameView::GraphicsPieceItem::setState(const Piece &state)
+{
+    if (color(state) == White) {
+        setBrush(QBrush(Qt::gray));
+        setVisible(true);
+    } else if (color(state) == Black) {
+        setBrush(QBrush(Qt::black));
+        setVisible(true);
+    } else if (state == Empty) {
+        setVisible(false);
+    }
 }
 
 HexdameView::HexdameView()
@@ -62,12 +72,11 @@ HexdameView::HexdameView()
 {
     foreach (Coord c, grid.coords()) {
         GraphicsHexItem *h = new GraphicsHexItem(c);
-        map[c] = h;
+        coordToHex[c] = h;
 
         Piece piece = grid.at(c);
-        if (piece != Empty) {
-            GraphicsPieceItem *p = new GraphicsPieceItem(color(piece), h);
-        }
+        GraphicsPieceItem *p = new GraphicsPieceItem(piece, h);
+        coordToPiece[c] = p;
 
 #if 1   // add text coords
         QGraphicsTextItem *t = new QGraphicsTextItem(QString("{%1,%2}").arg(c.x).arg(c.y), h);
@@ -85,7 +94,9 @@ HexdameView::HexdameView()
 
     // connect signals
     connect(this, SIGNAL(playerMoved(Coord, Coord)),
-            &grid, SLOT(movePiece(Coord, Coord)));
+            &grid, SLOT(makeMove(Coord,Coord)));
+    connect(&grid, SIGNAL(boardChanged()),
+            this, SLOT(updateBoard()));
 }
 
 void
@@ -105,36 +116,38 @@ HexdameView::mousePressEvent(QMouseEvent *event)
         }
     }
 
-    if (piece) {
-        hexFrom = hex;
-        selectedPiece = piece;
+    // not selected a piece
+    if (!piece) return;
 
-        // draw it on top
-        hexFrom->setZValue(1);
 
-        QList<Move> moves = validMoves.value(hexFrom->coord());
-        lines = new QGraphicsItemGroup();
-        foreach (Move move, moves) {
-            QPointF from = map.value(move.from)->pos();
-            QPointF to;
-            QColor col(qrand() % 255, qrand() % 255, qrand() % 255);
-            foreach (Coord c, move.path) {
-                to = map.value(c)->pos();
+    hexFrom = hex;
+    selectedPiece = piece;
 
-                QGraphicsLineItem *line = new QGraphicsLineItem(QLineF(from, to));
-                line->setPen(col);
+    // draw it on top
+    hexFrom->setZValue(1);
 
-                lines->addToGroup(line);
+    QList<Move> moves = grid.validMoves(hexFrom->coord());
+    lines = new QGraphicsItemGroup();
+    foreach (Move move, moves) {
+        QPointF from = coordToHex.value(move.from)->pos();
+        QPointF to;
+        QColor col(qrand() % 255, qrand() % 255, qrand() % 255);
+        foreach (Coord c, move.path) {
+            to = coordToHex.value(c)->pos();
 
-                from = map.value(c)->pos();
+            QGraphicsLineItem *line = new QGraphicsLineItem(QLineF(from, to));
+            line->setPen(col);
 
-                GraphicsHexItem *dest = qgraphicsitem_cast<GraphicsHexItem *>(map.value(move.path.last()));
-                dest->setBrush(Qt::Dense1Pattern);
-                dests << dest;
-            }
+            lines->addToGroup(line);
+
+            from = coordToHex.value(c)->pos();
+
+            GraphicsHexItem *dest = qgraphicsitem_cast<GraphicsHexItem *>(coordToHex.value(move.path.last()));
+            dest->setBrush(Qt::Dense1Pattern);
+            dests << dest;
         }
-        scene.addItem(lines);
     }
+    scene.addItem(lines);
 }
 
 void
@@ -142,6 +155,7 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
 {
     QGraphicsView::mouseReleaseEvent(event);
     if (event->button() == Qt::RightButton) return;
+    if (!selectedPiece) return;
 
     GraphicsHexItem *hex = 0;
     GraphicsPieceItem *piece = 0;
@@ -155,38 +169,41 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
         }
     }
 
-    if (selectedPiece) {
-        if (hex && !piece) {
+    if (hex && !piece) {
 #define ALL_MOVES
 #ifndef ALL_MOVES
-            if (dests.contains(hex)) {
+        if (dests.contains(hex)) {
 #endif
-                Coord oldCoord = hexFrom->coord();
-                Coord newCoord = hex->coord();
+            Coord oldCoord = hexFrom->coord();
+            Coord newCoord = hex->coord();
 
-                selectedPiece->setParentItem(hex);
+            emit playerMoved(oldCoord, newCoord);
 
-                emit playerMoved(oldCoord, newCoord);
-
-                validMoves = grid.computeValidMoves();
 #ifndef ALL_MOVES
-            }
+        }
 #endif
-        }
+    }
 
-        selectedPiece->setPos(0.0, 0.0);
+    selectedPiece->setPos(0.0, 0.0);
 
-        // restore zValue
-        hexFrom->setZValue(0);
+    // restore zValue
+    hexFrom->setZValue(0);
 
-        hexFrom = 0;
-        selectedPiece = 0;
+    hexFrom = 0;
+    selectedPiece = 0;
 
-        scene.removeItem(lines);
-        foreach (GraphicsHexItem* h, dests) {
-            h->setBrush(Qt::NoBrush);
-        }
-        dests.clear();
-        delete lines;
+    scene.removeItem(lines);
+    foreach (GraphicsHexItem* h, dests) {
+        h->setBrush(Qt::NoBrush);
+    }
+    dests.clear();
+    delete lines;
+}
+
+void HexdameView::updateBoard()
+{
+    foreach (Coord c, grid.coords()) {
+        Piece piece = grid.at(c);
+        coordToPiece[c]->setState(piece);
     }
 }

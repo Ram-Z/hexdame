@@ -45,11 +45,7 @@ public:
     bool canJump(int x, int y) const;
     bool canJump(const Coord &c) const { return canJump(c.x, c.y); }
 
-    QList<Coord> neighbours(int x, int y) const { return neighbours(Coord {x, y}); }
-    QList<Coord> neighbours(const Coord &c) const;
-
-    const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
-    const QList<Move> possibleMoves(const Coord &c) const;
+    QList<Move> validMoves(const Coord &c) const { return _validMoves.value(c); }
 
     QHash< Coord, QList< Move > > computeValidMoves(Color col = None);
 
@@ -63,15 +59,26 @@ public:
     inline Color color(const Coord &c) const { return Hexdame::color(at(c)); }
 
 public slots:
-    bool movePiece(const Coord &oldCoord, const Coord &newCoord);
+    void makeMove(const Coord &oldCoord, const Coord &newCoord);
+
+signals:
+    void boardChanged();
+    void gameOver();
+    void moveFinished();
 
 private:
+    QList<Coord> neighbours(int x, int y) const { return neighbours(Coord {x, y}); }
+    QList<Coord> neighbours(const Coord &c) const;
+
+    const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
+    const QList<Move> possibleMoves(const Coord &c) const;
+
     QList<Move> dfs(const Coord &c, Move move = Move { -1, -1}) const;
 
     int _size = 0;
     QHash<Coord, Piece> grid;
 
-    QHash<Coord, QList<Move>> validMoves;
+    QHash<Coord, QList<Move>> _validMoves;
 };
 
 #endif

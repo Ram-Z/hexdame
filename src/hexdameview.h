@@ -26,6 +26,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 
+using namespace Hexdame;
+
 class HexdameView : public QGraphicsView
 {
     Q_OBJECT
@@ -53,16 +55,24 @@ class HexdameView : public QGraphicsView
     {
     public:
         enum { Type = UserType + 2 };
-        explicit GraphicsPieceItem(Color c, QGraphicsItem *parent);
+        explicit GraphicsPieceItem(Piece state, QGraphicsItem *parent);
         inline const Coord &coord() const {
             return qgraphicsitem_cast<GraphicsHexItem*>(parentItem())->coord();
         }
+        void setState(const Piece &state);
+        Piece state() const { return _state; }
 
         int type() const { return Type; }
+
+    private:
+        Piece _state;
     };
 
 public:
     explicit HexdameView();
+
+public slots:
+    void updateBoard();
 
 signals:
     void playerMoved(Coord oldCoord, Coord newCoord);
@@ -74,7 +84,8 @@ protected:
 private:
     QGraphicsScene scene;
 
-    QHash<Coord, GraphicsHexItem *> map;
+    QHash<Coord, GraphicsHexItem *> coordToHex;
+    QHash<Coord, GraphicsPieceItem *> coordToPiece;
     GraphicsHexItem *hexFrom = 0;
     GraphicsPieceItem *selectedPiece = 0;
     QGraphicsItemGroup *lines;

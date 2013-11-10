@@ -53,10 +53,12 @@ HexdameGame::canJump(int x, int y) const
 QHash<Coord, QList<Move>>
 HexdameGame::computeValidMoves(Color col)
 {
+    //FIXME remove this at some point
     QHash<Coord, QList<Move>> validMoves;
     if (col == None) {
         validMoves.unite(computeValidMoves(White));
         validMoves.unite(computeValidMoves(Black));
+        _validMoves = validMoves;
         return validMoves;
     }
     int maxMoves = 0;
@@ -78,23 +80,70 @@ HexdameGame::computeValidMoves(Color col)
         }
     }
 
+    _validMoves = validMoves;
+
+#if 0
     foreach (QList<Move> vl, validMoves) {
+        QHash<QPair<Coord,Coord>, Move> arf;
         foreach (Move v, vl) {
-            qDebug() << v.from << v.path;
+            QPair<Coord,Coord> meh = qMakePair(v.from,v.to());
+            qSort(v.taken.begin(), v.taken.end());
+            if (!arf.contains(meh)) {
+                arf[meh] = v;
+                qDebug() << v.from << v.taken << v.to();
+            } else {
+                if (!qEqual(arf.value(meh).taken.begin(),arf.value(meh).taken.end(),
+                           v.taken.begin())) {
+                    qDebug() << "FUCK";
+                    qDebug() << v.from << v.path << v.to();
+                    qDebug() << arf.value(meh).from << arf.value(meh).path << arf.value(meh).to();
+                }
+            }
         }
     }
+#endif
 
     return validMoves;
 }
 
-bool
-HexdameGame::movePiece(const Coord &oldCoord, const Coord &newCoord)
+void
+HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
 {
-    //TODO check if valid move
-    if (oldCoord != newCoord) {
+    if (oldCoord == newCoord) return;
+    if (!isEmpty(newCoord)) return;
+
+    Move move;
+    bool valid = false;
+    foreach (move, _validMoves.value(oldCoord)) {
+        qDebug() << move.from;
+        if (move.to() == newCoord) {
+            valid = true;
+            break;
+        }
+    }
+
+    //FIXME
+    if (!valid) {
         rat(newCoord) = at(oldCoord);
         rat(oldCoord) = Empty;
+
+        emit boardChanged();
+        computeValidMoves();
+        return;
     }
+
+    qDebug() << move.from << move.to();
+
+    rat(move.to()) = at(move.from);
+    rat(move.from) = Empty;
+
+    foreach (Coord c, move.taken) {
+        rat(c) = Empty;
+    }
+
+    emit boardChanged();
+
+    computeValidMoves();
 }
 
 QList<Coord>
