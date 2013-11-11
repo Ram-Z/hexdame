@@ -227,36 +227,23 @@ HexdameGame::possibleMoves(const Coord &c) const
 
     if (!moves.empty()) return moves;
 
-    if (isPawn(c)) {
-        QList<Coord> tos;
-        if (isBlack(c)) {
-            tos << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
-        } else if (isWhite(c)) {
-            tos << Coord {1, 0} << Coord {1, 1} << Coord {0, 1};
-        }
+    // don't change the order here
+    const static QList<Coord> l{Coord{1,0}, Coord{0,1}, Coord{1,1}, Coord{0,-1}, Coord{-1,0}, Coord{-1,-1}};
+    for (int i = 0; i < l.size(); ++i) {
+        if (i <  3 && isPawn(c) && isBlack(c)) continue;
+        if (i >= 3 && isPawn(c) && isWhite(c)) continue;
+        Coord lv = l.at(i);
+        for (int j = 1; j < 9; ++j) {
+            Coord n = c + j*lv;
 
-        foreach (Coord n, tos) {
-            Coord to = c + n;
-            if (_grid.contains(to) && isEmpty(to)) {
-                Move m {c};
-                m.path << to;
+            if (!_grid.contains(n)) break;
+            if (!isEmpty(n)) break;
 
-                moves << m;
-            }
-        }
-    } else if (isKing(c)) {
-        const static QList<Coord> l{Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1}, Coord{1,1}, Coord{-1,-1}};
-        foreach (Coord lv, l) {
-            for (int i = 1; i < 9; ++i) {
-                Coord n = c + i*lv;
+            Move m{c};
+            m.path << n;
+            moves << m;
 
-                if (!_grid.contains(n)) break;
-                if (!isEmpty(n)) break;
-
-                Move m{c};
-                m.path << n;
-                moves << m;
-            }
+            if (isPawn(c)) break;
         }
     }
 
@@ -277,6 +264,7 @@ HexdameGame::dfs(const Coord &c, Move move) const
     }
 
     QList<Move> moves;
+    //TODO refactor this mess at some point
     if (king) {
         const static QList<Coord> l{Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1}, Coord{1,1}, Coord{-1,-1}};
         foreach (Coord lv, l) {
@@ -284,14 +272,11 @@ HexdameGame::dfs(const Coord &c, Move move) const
             Move newMove, tmpMove;
             for (int i = 1; i < 9; i++) {
                 Coord n = c + i*lv;
-                // not on the grid
-                if (!_grid.contains(n)) break;
-                // same colour but not same piece
-                if (move.from != n && col == color(n)) break;
-                // non-empty cell after jumping
-                if (jump && move.from != n && !isEmpty(n)) break;
-                // already jumped
-                if (move.taken.contains(n)) break;
+
+                if (!_grid.contains(n)) break;                    // not on the grid
+                if (move.from != n && col == color(n)) break;     // same colour but not starting position
+                if (jump && move.from != n && !isEmpty(n)) break; // non-empty cell after jumping
+                if (move.taken.contains(n)) break;                // already took piece
 
                 // not yet jumping but different colour
                 if (!jump && col == -color(n)) {
