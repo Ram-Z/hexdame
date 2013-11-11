@@ -38,11 +38,11 @@ public:
     inline const int size() const { return _size; }
 
     const Piece at(int x, int y) const { return at(Coord {x, y}); }
-    const Piece at(const Coord &c) const { Q_ASSERT(grid.contains(c)); return grid.value(c); }
-    Piece &rat(int x, int y) { return grid[Coord {x, y}]; }
-    Piece &rat(const Coord &c) { return grid[c]; }
+    const Piece at(const Coord &c) const { Q_ASSERT(_grid.contains(c)); return _grid.value(c); }
+    Piece &rat(int x, int y) { return _grid[Coord {x, y}]; }
+    Piece &rat(const Coord &c) { return _grid[c]; }
 
-    QList<Coord> coords() const { return grid.keys(); }
+    QList<Coord> coords() const { return _grid.keys(); }
 
     bool canJump(int x, int y) const;
     bool canJump(const Coord &c) const { return canJump(c.x, c.y); }
@@ -83,10 +83,14 @@ private:
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
     const QList<Move> possibleMoves(const Coord &c) const;
 
+    void kingPiece(Coord c);
+
     QList<Move> dfs(const Coord &c, Move move = Move { -1, -1}) const;
 
     int _size = 0;
-    QHash<Coord, Piece> grid;
+    QHash<Coord, Piece> _grid;
+    int cntWhite = 0;
+    int cntBlack = 0;
 
     QHash<Coord, QList<Move>> _validMoves;
 

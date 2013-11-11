@@ -20,6 +20,8 @@
 #include "randomplayer.h"
 #include "hexdamegame.h"
 
+#include <ctime>
+
 RandomPlayer::RandomPlayer(HexdameGame *game, Color color)
     : AbstractPlayer(game, color)
 {
@@ -29,6 +31,7 @@ Move RandomPlayer::play()
 {
     QHash<Coord, QList<Move>> moves = _game->computeValidMoves(_color);
 
+    qsrand(std::time(0));
     int rand = qrand() % moves.size();
     Coord randCoord = moves.keys().at(rand);
     rand = qrand() % moves.value(randCoord).size();

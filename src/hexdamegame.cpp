@@ -31,17 +31,21 @@ HexdameGame::HexdameGame()
     , _black(new RandomPlayer(this, Black))
     , _currentPlayer(White)
 {
-    grid.reserve(_size * _size);
+    _grid.reserve(_size * _size);
 
     for (int x = 0; x < _size; ++x) {
         for (int y = 0; y < _size; ++y) {
             int s = size() / 2;
-            if (qAbs(x - y) <= s)
-                grid[Coord {x, y}] = Empty;
-            if (x < s && y < s)
-                grid[Coord {x, y}] = WhitePawn;
-            if (x > s && y > s)
-                grid[Coord {x, y}] = BlackPawn;
+            if (qAbs(x - y) <= s) {
+                _grid[Coord {x, y}] = Empty;
+            }
+            if (x < s && y < s) {
+                _grid[Coord {x, y}] = WhitePawn;
+                ++cntWhite;
+            } else if (x > s && y > s) {
+                _grid[Coord {x, y}] = BlackPawn;
+                ++cntBlack;
+            }
         }
     }
 }
@@ -115,14 +119,27 @@ HexdameGame::computeValidMoves(Color col)
 bool HexdameGame::gameOver() const
 {
     //TODO check for draws
-    int cntBlack = 0;
-    int cntWhite = 0;
-    foreach (Piece p, grid) {
-        if (Hexdame::color(p) == White) cntWhite++;
-        if (Hexdame::color(p) == Black) cntBlack++;
+    return !cntBlack || !cntWhite;
+}
+
+void
+HexdameGame::kingPiece(Coord c)
+{
+    if (color(c) == None) return;
+
+    if (color(c) == White) {
+        if (c.x == 8 || c.y == 8) {
+            _grid[c] = WhiteKing;
+            return;
+        }
     }
 
-    return !(cntBlack || cntWhite);
+    if (color(c) == Black) {
+        if (c.x == 0 || c.y == 0) {
+            _grid[c] = BlackKing;
+            return;
+        }
+    }
 }
 
 void
@@ -163,7 +180,14 @@ HexdameGame::makeMove(const Move &move)
 
     foreach (Coord c, move.taken) {
         rat(c) = Empty;
+        if (_currentPlayer == White) {
+            --cntBlack;
+        } else if (_currentPlayer == Black) {
+            --cntWhite;
+        }
     }
+
+    kingPiece(move.to());
 
     emit boardChanged();
 }
@@ -179,7 +203,7 @@ HexdameGame::neighbours(const Coord &c) const
          << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
 
     foreach (Coord dc, list) {
-        if (grid.contains(c + dc))
+        if (_grid.contains(c + dc))
             retval << c + dc;
     }
     cache[c] = retval;
@@ -206,7 +230,7 @@ HexdameGame::possibleMoves(const Coord &c) const
 
     foreach (Coord n, tos) {
         Coord to = c + n;
-        if (grid.contains(to) && isEmpty(to)) {
+        if (_grid.contains(to) && isEmpty(to)) {
             Move m {c};
             m.path << to;
 
@@ -233,7 +257,7 @@ HexdameGame::dfs(const Coord &c, Move move) const
         if (col == -color(n) && !move.taken.contains(n)) {
             Coord j = c + (n - c) * 2;
             // skip if !(onGrid && (empty || startingPos))
-            if (!grid.contains(j) || !isEmpty(j) && move.from != j) continue;
+            if (!_grid.contains(j) || !isEmpty(j) && move.from != j) continue;
 
             Move newMove(move);
 

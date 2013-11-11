@@ -58,11 +58,17 @@ HexdameView::GraphicsPieceItem::GraphicsPieceItem(Piece state, QGraphicsItem *pa
 
 void HexdameView::GraphicsPieceItem::setState(const Piece &state)
 {
-    if (color(state) == White) {
-        setBrush(QBrush(Qt::gray));
+    if (state == WhitePawn) {
+        setBrush(QBrush(Qt::gray, Qt::SolidPattern));
         setVisible(true);
-    } else if (color(state) == Black) {
-        setBrush(QBrush(Qt::black));
+    } else if (state == WhiteKing) {
+        setBrush(QBrush(Qt::gray, Qt::CrossPattern));
+        setVisible(true);
+    } else if (state == BlackPawn) {
+        setBrush(QBrush(Qt::black, Qt::SolidPattern));
+        setVisible(true);
+    } else if (state == BlackKing) {
+        setBrush(QBrush(Qt::black, Qt::CrossPattern));
         setVisible(true);
     } else if (state == Empty) {
         setVisible(false);
