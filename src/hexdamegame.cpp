@@ -227,20 +227,36 @@ HexdameGame::possibleMoves(const Coord &c) const
 
     if (!moves.empty()) return moves;
 
-    QList<Coord> tos;
-    if (color(c) == Black) {
-        tos << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
-    } else if (color(c) == White) {
-        tos << Coord {1, 0} << Coord {1, 1} << Coord {0, 1};
-    }
+    if (isPawn(c)) {
+        QList<Coord> tos;
+        if (isBlack(c)) {
+            tos << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
+        } else if (isWhite(c)) {
+            tos << Coord {1, 0} << Coord {1, 1} << Coord {0, 1};
+        }
 
-    foreach (Coord n, tos) {
-        Coord to = c + n;
-        if (_grid.contains(to) && isEmpty(to)) {
-            Move m {c};
-            m.path << to;
+        foreach (Coord n, tos) {
+            Coord to = c + n;
+            if (_grid.contains(to) && isEmpty(to)) {
+                Move m {c};
+                m.path << to;
 
-            moves << m;
+                moves << m;
+            }
+        }
+    } else if (isKing(c)) {
+        const static QList<Coord> l{Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1}, Coord{1,1}, Coord{-1,-1}};
+        foreach (Coord lv, l) {
+            for (int i = 1; i < 9; ++i) {
+                Coord n = c + i*lv;
+
+                if (!_grid.contains(n)) break;
+                if (!isEmpty(n)) break;
+
+                Move m{c};
+                m.path << n;
+                moves << m;
+            }
         }
     }
 
@@ -268,11 +284,16 @@ HexdameGame::dfs(const Coord &c, Move move) const
             Move newMove, tmpMove;
             for (int i = 1; i < 9; i++) {
                 Coord n = c + i*lv;
+                // not on the grid
                 if (!_grid.contains(n)) break;
+                // same colour but not same piece
                 if (move.from != n && col == color(n)) break;
+                // non-empty cell after jumping
                 if (jump && move.from != n && !isEmpty(n)) break;
+                // already jumped
                 if (move.taken.contains(n)) break;
 
+                // not yet jumping but different colour
                 if (!jump && col == -color(n)) {
                     jump = true;
                     tmpMove = move;
