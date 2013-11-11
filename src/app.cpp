@@ -230,8 +230,10 @@ App::initGUI()
     // Construct the main window
     _mainwindow.reset(new QMainWindow);
 
-    HexdameView *b = new HexdameView();
+    HexdameGame *g = new HexdameGame();
+    HexdameView *b = new HexdameView(g);
     _mainwindow->setCentralWidget(b);
+
 
     // Setup the central widget
     // TODO test this on a non-tiling WM
@@ -254,6 +256,8 @@ App::initGUI()
     // Display the main window
     _mainwindow->setVisible(true);
     _mainwindow->move(leftmargin, topmargin);
+
+    g->startNextTurn();
 }
 
 void

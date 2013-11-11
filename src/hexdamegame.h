@@ -24,6 +24,8 @@
 
 #include <QtDebug> // needed for Q_ASSERT
 
+class AbstractPlayer;
+
 using namespace Hexdame;
 
 class HexdameGame : public QObject
@@ -49,6 +51,11 @@ public:
 
     QHash< Coord, QList< Move > > computeValidMoves(Color col = None);
 
+    AbstractPlayer *currentPlayer() const { return _currentPlayer == White ? _white : _black; }
+    void startNextTurn();
+
+    bool gameOver() const;
+
     // convenience functions
     inline bool isWhite(const Coord &c) const { return Hexdame::isWhite(at(c)); }
     inline bool isBlack(const Coord &c) const { return Hexdame::isBlack(at(c)); }
@@ -60,10 +67,13 @@ public:
 
 public slots:
     void makeMove(const Coord &oldCoord, const Coord &newCoord);
+    void makeMove(const Move &move);
+    void setBlackPlayer(AbstractPlayer *player) { _black = player; }
+    void setWhitePlayer(AbstractPlayer *player) { _white = player; }
 
 signals:
     void boardChanged();
-    void gameOver();
+    //void gameOver();
     void moveFinished();
 
 private:
@@ -79,6 +89,9 @@ private:
     QHash<Coord, Piece> grid;
 
     QHash<Coord, QList<Move>> _validMoves;
+
+    AbstractPlayer *_white, *_black;
+    Color _currentPlayer;
 };
 
 #endif

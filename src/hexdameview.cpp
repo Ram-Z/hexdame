@@ -19,6 +19,8 @@
 
 #include "hexdameview.h"
 
+#include "hexdamegame.h"
+
 #include <qmath.h>
 #include <QMouseEvent>
 
@@ -67,14 +69,15 @@ void HexdameView::GraphicsPieceItem::setState(const Piece &state)
     }
 }
 
-HexdameView::HexdameView()
+HexdameView::HexdameView(HexdameGame *game)
     : QGraphicsView()
+    , _game(game)
 {
-    foreach (Coord c, grid.coords()) {
+    foreach (Coord c, _game->coords()) {
         GraphicsHexItem *h = new GraphicsHexItem(c);
         coordToHex[c] = h;
 
-        Piece piece = grid.at(c);
+        Piece piece = _game->at(c);
         GraphicsPieceItem *p = new GraphicsPieceItem(piece, h);
         coordToPiece[c] = p;
 
@@ -90,12 +93,12 @@ HexdameView::HexdameView()
     rotate(180);
     setScene(&scene);
 
-    validMoves = grid.computeValidMoves();
+    validMoves = _game->computeValidMoves();
 
     // connect signals
     connect(this, SIGNAL(playerMoved(Coord, Coord)),
-            &grid, SLOT(makeMove(Coord,Coord)));
-    connect(&grid, SIGNAL(boardChanged()),
+            _game, SLOT(makeMove(Coord,Coord)));
+    connect(_game, SIGNAL(boardChanged()),
             this, SLOT(updateBoard()));
 }
 
@@ -126,7 +129,7 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     // draw it on top
     hexFrom->setZValue(1);
 
-    QList<Move> moves = grid.validMoves(hexFrom->coord());
+    QList<Move> moves = _game->validMoves(hexFrom->coord());
     lines = new QGraphicsItemGroup();
     foreach (Move move, moves) {
         QPointF from = coordToHex.value(move.from)->pos();
@@ -202,8 +205,8 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
 
 void HexdameView::updateBoard()
 {
-    foreach (Coord c, grid.coords()) {
-        Piece piece = grid.at(c);
+    foreach (Coord c, _game->coords()) {
+        Piece piece = _game->at(c);
         coordToPiece[c]->setState(piece);
     }
 }

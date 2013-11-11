@@ -19,9 +19,17 @@
 
 #include "hexdamegame.h"
 
+#include "humanplayer.h"
+#include "randomplayer.h"
+#include <QDate>
+#include <qcoreapplication.h>
+
 HexdameGame::HexdameGame()
     : QObject()
     , _size(9)
+    , _white(new RandomPlayer(this, White))
+    , _black(new RandomPlayer(this, Black))
+    , _currentPlayer(White)
 {
     grid.reserve(_size * _size);
 
@@ -44,8 +52,6 @@ HexdameGame::canJump(int x, int y) const
     for (int dx = -1; dx <= 1; ++dx) {
         for (int dy = -1; dy <= 1; ++dy) {
             Piece dc = at(x + dx, y + dx);
-
-            qDebug() << x + dx << y + dy << ": " << dc;
         }
     }
 }
@@ -106,6 +112,19 @@ HexdameGame::computeValidMoves(Color col)
     return validMoves;
 }
 
+bool HexdameGame::gameOver() const
+{
+    //TODO check for draws
+    int cntBlack = 0;
+    int cntWhite = 0;
+    foreach (Piece p, grid) {
+        if (Hexdame::color(p) == White) cntWhite++;
+        if (Hexdame::color(p) == Black) cntBlack++;
+    }
+
+    return !(cntBlack || cntWhite);
+}
+
 void
 HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
 {
@@ -115,7 +134,6 @@ HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
     Move move;
     bool valid = false;
     foreach (move, _validMoves.value(oldCoord)) {
-        qDebug() << move.from;
         if (move.to() == newCoord) {
             valid = true;
             break;
@@ -132,8 +150,14 @@ HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
         return;
     }
 
-    qDebug() << move.from << move.to();
+    makeMove(move);
 
+    computeValidMoves();
+}
+
+void
+HexdameGame::makeMove(const Move &move)
+{
     rat(move.to()) = at(move.from);
     rat(move.from) = Empty;
 
@@ -142,8 +166,6 @@ HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
     }
 
     emit boardChanged();
-
-    computeValidMoves();
 }
 
 QList<Coord>
@@ -172,10 +194,6 @@ HexdameGame::possibleMoves(const Coord &c) const
     if (isEmpty(c)) return QList<Move> {};
 
     QList<Move> moves = dfs(c);
-
-//    foreach (Move move, moves) {
-//        qDebug() << move.path;
-//    }
 
     if (!moves.empty()) return moves;
 
@@ -233,6 +251,26 @@ HexdameGame::dfs(const Coord &c, Move move) const
         }
     }
     return best_moves;
+}
+
+void
+HexdameGame::startNextTurn()
+{
+    while (!gameOver()) {
+        if (_currentPlayer == White) {
+            _currentPlayer = Black;
+        } else {
+            _currentPlayer = White;
+        }
+
+        Move move = currentPlayer()->play();
+        makeMove(move);
+
+        // wait 2 seconds before next move
+        QTime wait = QTime::currentTime().addSecs(2);
+        while (QTime::currentTime() < wait)
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
 }
 
 QDebug

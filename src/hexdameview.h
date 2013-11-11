@@ -20,13 +20,15 @@
 #ifndef HEXDAMEVIEW_H
 #define HEXDAMEVIEW_H
 
-#include "hexdamegame.h"
+#include "commondefs.h"
 
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 
 using namespace Hexdame;
+
+class HexdameGame;
 
 class HexdameView : public QGraphicsView
 {
@@ -69,7 +71,7 @@ class HexdameView : public QGraphicsView
     };
 
 public:
-    explicit HexdameView();
+    explicit HexdameView(HexdameGame *game);
 
 public slots:
     void updateBoard();
@@ -91,7 +93,7 @@ private:
     QGraphicsItemGroup *lines;
     QList<GraphicsHexItem*> dests;
 
-    HexdameGame grid;
+    HexdameGame *_game;
     QHash< Coord, QList<Move> > validMoves;
 };
 
