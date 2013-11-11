@@ -77,9 +77,6 @@ signals:
     void moveFinished();
 
 private:
-    QList<Coord> neighbours(int x, int y) const { return neighbours(Coord {x, y}); }
-    QList<Coord> neighbours(const Coord &c) const;
-
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
     const QList<Move> possibleMoves(const Coord &c) const;
 

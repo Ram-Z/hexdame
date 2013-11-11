@@ -117,7 +117,8 @@ HexdameGame::computeValidMoves(Color col)
     return validMoves;
 }
 
-bool HexdameGame::gameOver() const
+bool
+HexdameGame::gameOver() const
 {
     //TODO check for draws
     return !cntBlack || !cntWhite;
@@ -193,25 +194,6 @@ HexdameGame::makeMove(const Move &move)
     emit boardChanged();
 }
 
-QList<Coord>
-HexdameGame::neighbours(const Coord &c) const
-{
-    static QHash<Coord, QList<Coord>> cache;
-    if (cache.contains(c)) return cache.value(c);
-
-    QList<Coord> list, retval;
-    list << Coord {1, 0} << Coord {1, 1} << Coord {0, 1}
-         << Coord { -1, 0} << Coord { -1, -1} << Coord {0, -1};
-
-    foreach (Coord dc, list) {
-        if (_grid.contains(c + dc))
-            retval << c + dc;
-    }
-    cache[c] = retval;
-
-    return retval;
-}
-
 const QList<Move>
 HexdameGame::possibleMoves(const Coord &from) const
 {
@@ -264,64 +246,43 @@ HexdameGame::dfs(const Coord &c, Move move) const
         king = isKing(c);
     }
 
-    QList<Move> moves;
-    //TODO refactor this mess at some point
-    if (king) {
-        const static QList<Coord> l{Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1}, Coord{1,1}, Coord{-1,-1}};
-        foreach (Coord lv, l) {
-            bool jump = false;
-            Move newMove, tmpMove;
-            for (int i = 1; i < 9; i++) {
-                Coord n = c + i*lv;
+    const static QList<Coord> l{Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1}, Coord{1,1}, Coord{-1,-1}};
+    foreach (Coord lv, l) {
+        for (int i = 1; i < 9; ++i) {
+            Coord n = c + i*lv;
 
-                if (!_grid.contains(n)) break;                    // not on the grid
-                if (move.from != n && col == color(n)) break;     // same colour but not starting position
-                if (jump && move.from != n && !isEmpty(n)) break; // non-empty cell after jumping
-                if (move.taken.contains(n)) break;                // already took piece
+            if (!_grid.contains(n)) break;                // not on the grid
+            if (move.from != n && col == color(n)) break; // same colour but not starting position
+            if (move.taken.contains(n)) break;            // already took piece
 
-                // not yet jumping but different colour
-                if (!jump && col == -color(n)) {
-                    jump = true;
-                    tmpMove = move;
-                    tmpMove.taken << n;
-                    continue;
-                }
+            if (col == -color(n)) {
+                while (++i < 9) {
+                    Coord to = c + i*lv;
+                    if (!_grid.contains(to) || (move.from != to && !isEmpty(to))) { i = 9; break; } // non-empty cell after jumping
 
-                if (jump) {
-                    newMove = tmpMove;
-                    newMove.path << n;
-                    moves << newMove;
+                    // create a new Move
+                    Move newMove(move);
+                    newMove.taken << n;
+                    newMove.path << to;
+
+                    // update/reset best_moves list
+                    if (best_moves.empty() || newMove.path.size() == best_moves.at(0).path.size()) {
+                        best_moves << newMove;
+                    } else if (newMove.path.size() > best_moves.at(0).path.size()) {
+                        best_moves.clear();
+                        best_moves << newMove;
+                    }
+
+                    // recursive call
+                    dfs(to, newMove);
+
+                    if (!king) break; // Pawns can't jump further than 1
                 }
             }
-        }
-    } else {
-        foreach (Coord n, neighbours(c)) {
-            // different colors
-            if (col == -color(n) && !move.taken.contains(n)) {
-                Coord j = c + (n - c) * 2;
-                // skip if !(onGrid && (empty || startingPos))
-                if (!_grid.contains(j) || !isEmpty(j) && move.from != j) continue;
-
-                Move newMove(move);
-
-                newMove.path << j;
-                newMove.taken << n;
-
-                moves << newMove;
-            }
+            if (!king) break; // Pawns can't jump further than 1
         }
     }
 
-    foreach (Move newMove, moves) {
-        if (best_moves.empty() || newMove.path.size() == best_moves.at(0).path.size()) {
-            best_moves << newMove;
-        } else if (newMove.path.size() > best_moves.at(0).path.size()) {
-            best_moves.clear();
-            best_moves << newMove;
-        }
-
-        dfs(newMove.to(), newMove);
-    }
     return best_moves;
 }
 
@@ -335,8 +296,8 @@ HexdameGame::startNextTurn()
             _currentPlayer = White;
         }
 
-//        Move move = currentPlayer()->play();
-//        makeMove(move);
+        Move move = currentPlayer()->play();
+        makeMove(move);
 
         // wait 2 seconds before next move
         QTime wait = QTime::currentTime().addSecs(2);
@@ -351,4 +312,3 @@ operator<<(QDebug dbg, const Coord &coord)
     dbg.nospace() << "Coord(" << coord.x << "," << coord.y << ")";
     return dbg.space();
 }
-
