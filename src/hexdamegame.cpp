@@ -213,13 +213,13 @@ HexdameGame::neighbours(const Coord &c) const
 }
 
 const QList<Move>
-HexdameGame::possibleMoves(const Coord &c) const
+HexdameGame::possibleMoves(const Coord &from) const
 {
-    if (isEmpty(c)) return QList<Move> {};
+    if (isEmpty(from)) return QList<Move> {};
 
-    QList<Move> moves = dfs(c);
+    QList<Move> moves = dfs(from);
 
-    if (isKing(c)) {
+    if (isKing(from)) {
         foreach (Move tmp, moves) {
             qDebug() << tmp.path;
         }
@@ -227,23 +227,24 @@ HexdameGame::possibleMoves(const Coord &c) const
 
     if (!moves.empty()) return moves;
 
-    // don't change the order here
+    // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
     const static QList<Coord> l{Coord{1,0}, Coord{0,1}, Coord{1,1}, Coord{0,-1}, Coord{-1,0}, Coord{-1,-1}};
     for (int i = 0; i < l.size(); ++i) {
-        if (i <  3 && isPawn(c) && isBlack(c)) continue;
-        if (i >= 3 && isPawn(c) && isWhite(c)) continue;
-        Coord lv = l.at(i);
+        if (i <  3 && isPawn(from) && isBlack(from)) i = 3; // jump to Blacks moves
+        if (i >= 3 && isPawn(from) && isWhite(from)) break; // ignore the rest
+
         for (int j = 1; j < 9; ++j) {
-            Coord n = c + j*lv;
+            Coord to = from + j*l.at(i);
 
-            if (!_grid.contains(n)) break;
-            if (!isEmpty(n)) break;
+            if (!_grid.contains(to)) break;
+            if (!isEmpty(to)) break;
 
-            Move m{c};
-            m.path << n;
+            // create Move and add to list
+            Move m{from};
+            m.path << to;
             moves << m;
 
-            if (isPawn(c)) break;
+            if (isPawn(from)) break; // Pawns can't jump further than 1
         }
     }
 
@@ -285,6 +286,7 @@ HexdameGame::dfs(const Coord &c, Move move) const
                     tmpMove.taken << n;
                     continue;
                 }
+
                 if (jump) {
                     newMove = tmpMove;
                     newMove.path << n;
