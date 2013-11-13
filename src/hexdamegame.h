@@ -51,8 +51,8 @@ public:
 
     QHash< Coord, QList< Move > > computeValidMoves(Color col = None);
 
-    AbstractPlayer *currentPlayer() const { return _currentPlayer == White ? _white : _black; }
-    void startNextTurn();
+    Color currentColor() const { return _currentColor; }
+    bool currentPlayerIsHuman() const;
 
     bool gameOver() const;
 
@@ -68,21 +68,27 @@ public:
 public slots:
     void makeMove(const Coord &oldCoord, const Coord &newCoord);
     void makeMove(const Move &move);
-    void setBlackPlayer(AbstractPlayer *player) { _black = player; }
-    void setWhitePlayer(AbstractPlayer *player) { _white = player; }
+
+    void startNextTurn();
+
+    void setBlackPlayer(AbstractPlayer *player);
+    void setWhitePlayer(AbstractPlayer *player);
 
 signals:
     void boardChanged();
     //void gameOver();
     void moveFinished();
+    void playerMoved();
+    void currentHumanPlayer(Color);
 
 private:
     const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
     const QList<Move> possibleMoves(const Coord &c) const;
+    QList<Move> dfs(const Coord &c, Move move = Move { -1, -1}) const;
 
     void kingPiece(Coord c);
 
-    QList<Move> dfs(const Coord &c, Move move = Move { -1, -1}) const;
+    AbstractPlayer *currentPlayer() const { return _currentColor == White ? _white : _black; }
 
     int _size = 0;
     QHash<Coord, Piece> _grid;
@@ -91,8 +97,9 @@ private:
 
     QHash<Coord, QList<Move>> _validMoves;
 
-    AbstractPlayer *_white, *_black;
-    Color _currentPlayer;
+    AbstractPlayer *_white = 0;
+    AbstractPlayer *_black = 0;
+    Color _currentColor;
 };
 
 #endif

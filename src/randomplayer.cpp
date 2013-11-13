@@ -20,18 +20,24 @@
 #include "randomplayer.h"
 #include "hexdamegame.h"
 
-#include <ctime>
+#include <QTime>
+#include <QCoreApplication>
 
 RandomPlayer::RandomPlayer(HexdameGame *game, Color color)
-    : AbstractPlayer(game, color)
+    : AbstractPlayer(AI, game, color)
 {
+    qsrand(QTime::currentTime().second());
 }
 
 Move RandomPlayer::play()
 {
+    // wait a bit before next move
+    QTime wait = QTime::currentTime().addSecs(1);
+    while (QTime::currentTime() < wait)
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+
     QHash<Coord, QList<Move>> moves = _game->computeValidMoves(_color);
 
-    qsrand(std::time(0));
     int rand = qrand() % moves.size();
     Coord randCoord = moves.keys().at(rand);
     rand = qrand() % moves.value(randCoord).size();

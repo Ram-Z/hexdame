@@ -58,6 +58,7 @@ HexdameView::GraphicsPieceItem::GraphicsPieceItem(Piece state, QGraphicsItem *pa
 
 void HexdameView::GraphicsPieceItem::setState(const Piece &state)
 {
+    _state = state;
     if (state == WhitePawn) {
         setBrush(QBrush(Qt::gray, Qt::SolidPattern));
         setVisible(true);
@@ -111,9 +112,7 @@ HexdameView::HexdameView(HexdameGame *game)
 void
 HexdameView::mousePressEvent(QMouseEvent *event)
 {
-    QGraphicsView::mousePressEvent(event);
     if (event->button() == Qt::RightButton) return;
-
     GraphicsHexItem *hex = 0;
     GraphicsPieceItem *piece = 0;
     foreach (QGraphicsItem * item, items(event->pos())) {
@@ -128,6 +127,10 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     // not selected a piece
     if (!piece) return;
 
+    if (!_game->currentPlayerIsHuman()) return;
+    if (color(piece->state()) != _game->currentColor()) return;
+
+    QGraphicsView::mousePressEvent(event);
 
     hexFrom = hex;
     selectedPiece = piece;
@@ -178,6 +181,18 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
         }
     }
 
+    selectedPiece->setPos(0.0, 0.0);
+
+    // restore zValue
+    hexFrom->setZValue(0);
+
+    scene.removeItem(lines);
+    foreach (GraphicsHexItem* h, dests) {
+        h->setBrush(Qt::NoBrush);
+    }
+    dests.clear();
+    delete lines;
+
     if (hex && !piece) {
 #define ALL_MOVES
 #ifndef ALL_MOVES
@@ -187,26 +202,13 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
             Coord newCoord = hex->coord();
 
             emit playerMoved(oldCoord, newCoord);
-
 #ifndef ALL_MOVES
         }
 #endif
     }
 
-    selectedPiece->setPos(0.0, 0.0);
-
-    // restore zValue
-    hexFrom->setZValue(0);
-
     hexFrom = 0;
     selectedPiece = 0;
-
-    scene.removeItem(lines);
-    foreach (GraphicsHexItem* h, dests) {
-        h->setBrush(Qt::NoBrush);
-    }
-    dests.clear();
-    delete lines;
 }
 
 void HexdameView::updateBoard()

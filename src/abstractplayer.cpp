@@ -19,8 +19,9 @@
 
 #include "abstractplayer.h"
 
-AbstractPlayer::AbstractPlayer(HexdameGame *game, Color color)
+AbstractPlayer::AbstractPlayer(PlayerType type, HexdameGame *game, Color color)
     : _game(game)
     , _color(color)
+    , _type(type)
 {
 }

@@ -30,16 +30,26 @@ class AbstractPlayer : public QObject
     Q_OBJECT
 
 public:
-    AbstractPlayer(HexdameGame *game, Color color);
+    enum PlayerType {
+        Human,
+        AI
+    };
 
+    AbstractPlayer(PlayerType type, HexdameGame *game, Color color);
+
+    PlayerType type() { return _type; }
+
+public slots:
     virtual Move play() = 0;
 
 signals:
     void move(const Move &);
 
 protected:
+    const PlayerType _type;
+
     HexdameGame *_game;
-    Color _color;
+    const Color _color;
 
 private:
 };

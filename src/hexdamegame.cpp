@@ -21,15 +21,11 @@
 
 #include "humanplayer.h"
 #include "randomplayer.h"
-#include <QDate>
-#include <qcoreapplication.h>
 
 HexdameGame::HexdameGame()
     : QObject()
     , _size(9)
-    , _white(new RandomPlayer(this, White))
-    , _black(new RandomPlayer(this, Black))
-    , _currentPlayer(White)
+    , _currentColor(Black) // it'll swith on the first turn
 {
     _grid.reserve(_size * _size);
 
@@ -48,6 +44,11 @@ HexdameGame::HexdameGame()
             }
         }
     }
+
+    setWhitePlayer(new HumanPlayer(this, White));
+    setBlackPlayer(new RandomPlayer(this, Black));
+
+    connect(this, SIGNAL(playerMoved()), SLOT(startNextTurn()));
 }
 
 bool
@@ -118,6 +119,12 @@ HexdameGame::computeValidMoves(Color col)
 }
 
 bool
+HexdameGame::currentPlayerIsHuman() const
+{
+    return currentPlayer()->type() == AbstractPlayer::Human;
+}
+
+bool
 HexdameGame::gameOver() const
 {
     //TODO check for draws
@@ -146,6 +153,7 @@ HexdameGame::kingPiece(Coord c)
 
 void
 HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
+
 {
     if (oldCoord == newCoord) return;
     if (!isEmpty(newCoord)) return;
@@ -182,9 +190,9 @@ HexdameGame::makeMove(const Move &move)
 
     foreach (Coord c, move.taken) {
         rat(c) = Empty;
-        if (_currentPlayer == White) {
+        if (_currentColor == White) {
             --cntBlack;
-        } else if (_currentPlayer == Black) {
+        } else if (_currentColor == Black) {
             --cntWhite;
         }
     }
@@ -192,6 +200,7 @@ HexdameGame::makeMove(const Move &move)
     kingPiece(move.to());
 
     emit boardChanged();
+    emit playerMoved();
 }
 
 const QList<Move>
@@ -287,22 +296,40 @@ HexdameGame::dfs(const Coord &c, Move move) const
 }
 
 void
+HexdameGame::setBlackPlayer(AbstractPlayer *player)
+{
+    if (_black) {
+        disconnect(_black, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+        delete _black;
+    }
+    _black = player;
+    connect(_black, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+}
+
+void
+HexdameGame::setWhitePlayer(AbstractPlayer *player)
+{
+    if (_white) {
+        disconnect(_white, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+        delete _white;
+    }
+    _white = player;
+    connect(_white, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+}
+
+void
 HexdameGame::startNextTurn()
 {
-    while (!gameOver()) {
-        if (_currentPlayer == White) {
-            _currentPlayer = Black;
+    if (!gameOver()) {
+        if (_currentColor == White) {
+            _currentColor = Black;
         } else {
-            _currentPlayer = White;
+            _currentColor = White;
         }
 
-        Move move = currentPlayer()->play();
-        makeMove(move);
-
-        // wait 2 seconds before next move
-        QTime wait = QTime::currentTime().addSecs(2);
-        while (QTime::currentTime() < wait)
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        if (!currentPlayerIsHuman()) {
+            Move move = currentPlayer()->play();
+        }
     }
 }
 

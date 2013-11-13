@@ -34,7 +34,6 @@ class HexdameView : public QGraphicsView
 {
     Q_OBJECT
 
-    static const quint8 radius = 50;
 
     enum Type {
         HexItem = QGraphicsItem::UserType + 1,
@@ -95,6 +94,8 @@ private:
 
     HexdameGame *_game;
     QHash< Coord, QList<Move> > validMoves;
+
+    static const quint8 radius = 50;
 };
 
 #endif

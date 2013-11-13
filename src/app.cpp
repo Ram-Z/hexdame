@@ -257,7 +257,7 @@ App::initGUI()
     _mainwindow->setVisible(true);
     _mainwindow->move(leftmargin, topmargin);
 
-//    g->startNextTurn();
+    g->startNextTurn();
 }
 
 void

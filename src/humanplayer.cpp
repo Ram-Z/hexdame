@@ -20,7 +20,7 @@
 #include "humanplayer.h"
 
 HumanPlayer::HumanPlayer(HexdameGame *game, Color color)
-    : AbstractPlayer(game, color)
+    : AbstractPlayer(Human, game, color)
 {
 }
 
