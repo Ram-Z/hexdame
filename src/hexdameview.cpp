@@ -100,8 +100,6 @@ HexdameView::HexdameView(HexdameGame *game)
     rotate(180);
     setScene(&scene);
 
-    validMoves = _game->computeValidMoves();
-
     // connect signals
     connect(this, SIGNAL(playerMoved(Coord, Coord)),
             _game, SLOT(makeMove(Coord,Coord)));

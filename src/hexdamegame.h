@@ -49,7 +49,7 @@ public:
 
     QList<Move> validMoves(const Coord &c) const { return _validMoves.value(c); }
 
-    QHash< Coord, QList< Move > > computeValidMoves(Color col = None);
+    QHash< Coord, QList< Move > > computeValidMoves(Color col);
 
     Color currentColor() const { return _currentColor; }
     bool currentPlayerIsHuman() const;

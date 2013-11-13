@@ -64,14 +64,11 @@ HexdameGame::canJump(int x, int y) const
 QHash<Coord, QList<Move>>
 HexdameGame::computeValidMoves(Color col)
 {
-    //FIXME remove this at some point
     QHash<Coord, QList<Move>> validMoves;
     if (col == None) {
-        validMoves.unite(computeValidMoves(White));
-        validMoves.unite(computeValidMoves(Black));
-        _validMoves = validMoves;
         return validMoves;
     }
+
     int maxMoves = 0;
 
     foreach (Coord from, coords()) {
@@ -173,13 +170,10 @@ HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
         rat(oldCoord) = Empty;
 
         emit boardChanged();
-        computeValidMoves();
         return;
     }
 
     makeMove(move);
-
-    computeValidMoves();
 }
 
 void
@@ -326,6 +320,8 @@ HexdameGame::startNextTurn()
         } else {
             _currentColor = White;
         }
+
+        computeValidMoves(_currentColor);
 
         if (!currentPlayerIsHuman()) {
             Move move = currentPlayer()->play();

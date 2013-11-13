@@ -93,7 +93,6 @@ private:
     QList<GraphicsHexItem*> dests;
 
     HexdameGame *_game;
-    QHash< Coord, QList<Move> > validMoves;
 
     static const quint8 radius = 50;
 };
