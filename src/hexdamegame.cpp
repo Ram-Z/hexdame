@@ -46,7 +46,7 @@ HexdameGame::HexdameGame()
     }
 
     setWhitePlayer(new HumanPlayer(this, White));
-    setBlackPlayer(new RandomPlayer(this, Black));
+    setBlackPlayer(new HumanPlayer(this, Black));
 
     connect(this, SIGNAL(playerMoved()), SLOT(startNextTurn()));
 }
@@ -204,12 +204,6 @@ HexdameGame::possibleMoves(const Coord &from) const
 
     QList<Move> moves = dfs(from);
 
-    if (isKing(from)) {
-        foreach (Move tmp, moves) {
-            qDebug() << tmp.path;
-        }
-    }
-
     if (!moves.empty()) return moves;
 
     // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
@@ -269,8 +263,17 @@ HexdameGame::dfs(const Coord &c, Move move) const
                     newMove.path << to;
 
                     // update/reset best_moves list
-                    if (best_moves.empty() || newMove.path.size() == best_moves.at(0).path.size()) {
+                    if (best_moves.empty()) {
                         best_moves << newMove;
+                    } else if (newMove.path.size() == best_moves.at(0).path.size()) {
+                        bool dup = false;
+                        foreach (Move oldMove, best_moves) {
+                            if (dup = QSet<Coord>::fromList(oldMove.taken) == QSet<Coord>::fromList(newMove.taken)) {
+                                // moves are equivalent
+                                break;
+                            }
+                        }
+                        if (!dup) best_moves << newMove;
                     } else if (newMove.path.size() > best_moves.at(0).path.size()) {
                         best_moves.clear();
                         best_moves << newMove;

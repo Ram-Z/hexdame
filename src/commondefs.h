@@ -78,6 +78,9 @@ struct Move {
     QList<Coord> taken;
 
     inline const Coord &to() const { return path.last(); }
+    bool operator==(const Move &m) const {
+        return this->from == m.from && this->to() == m.to() && this->taken == m.taken;
+    }
 };
 
 #endif // COMMONDEFS_H

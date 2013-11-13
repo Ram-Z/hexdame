@@ -126,7 +126,7 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     if (!piece) return;
 
     if (!_game->currentPlayerIsHuman()) return;
-    if (color(piece->state()) != _game->currentColor()) return;
+  //  if (color(piece->state()) != _game->currentColor()) return;
 
     QGraphicsView::mousePressEvent(event);
 
@@ -188,7 +188,6 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
     foreach (GraphicsHexItem* h, dests) {
         h->setBrush(Qt::NoBrush);
     }
-    dests.clear();
     delete lines;
 
     if (hex && !piece) {
@@ -205,6 +204,7 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
 #endif
     }
 
+    dests.clear();
     hexFrom = 0;
     selectedPiece = 0;
 }
