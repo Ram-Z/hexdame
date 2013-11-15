@@ -19,8 +19,7 @@
 
 #include "hexdamegame.h"
 
-#include "humanplayer.h"
-#include "randomplayer.h"
+#include "player.h"
 
 HexdameGame::HexdameGame()
     : QObject()

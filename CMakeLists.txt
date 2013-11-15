@@ -37,7 +37,7 @@ LIST (APPEND CMAKE_PREFIX_PATH "${MAINFOLDER}")
 SET (CMAKE_MODULE_PATH "${MAINFOLDER}/tools/share/cmake")
 
 #
-# Locate Project Prerequisites 
+# Locate Project Prerequisites
 #
 FIND_PACKAGE (Log4Cxx REQUIRED)
 INCLUDE_DIRECTORIES(${Log4Cxx_INCLUDE_DIRS})
