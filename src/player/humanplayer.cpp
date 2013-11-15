@@ -24,7 +24,7 @@ HumanPlayer::HumanPlayer(HexdameGame *game, Color color)
 {
 }
 
-Move HumanPlayer::play()
+void HumanPlayer::play()
 {
 
 }

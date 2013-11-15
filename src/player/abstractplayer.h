@@ -40,7 +40,7 @@ public:
     PlayerType type() { return _type; }
 
 public slots:
-    virtual Move play() = 0;
+    virtual void play() = 0;
 
 signals:
     void move(const Move &);

@@ -29,7 +29,7 @@ RandomPlayer::RandomPlayer(HexdameGame *game, Color color)
     qsrand(QTime::currentTime().second());
 }
 
-Move RandomPlayer::play()
+void RandomPlayer::play()
 {
     // wait a bit before next move
     QTime wait = QTime::currentTime().addSecs(1);
@@ -45,6 +45,4 @@ Move RandomPlayer::play()
     qDebug() << randMove.from << randMove.path;
 
     emit move(randMove);
-
-    return randMove;
 }

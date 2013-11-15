@@ -300,6 +300,8 @@ HexdameGame::setBlackPlayer(AbstractPlayer *player)
     }
     _black = player;
     connect(_black, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+    if (currentColor() == Black)
+        _black->play();
 }
 
 void
@@ -311,6 +313,8 @@ HexdameGame::setWhitePlayer(AbstractPlayer *player)
     }
     _white = player;
     connect(_white, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+    if (currentColor() == White)
+        _white->play();
 }
 
 void
@@ -325,9 +329,7 @@ HexdameGame::startNextTurn()
 
         computeValidMoves(_currentColor);
 
-        if (!currentPlayerIsHuman()) {
-            Move move = currentPlayer()->play();
-        }
+        currentPlayer()->play();
     }
 }
 

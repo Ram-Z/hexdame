@@ -29,7 +29,7 @@ class RandomPlayer : public AbstractPlayer
 public:
     RandomPlayer(HexdameGame *game, Color color);
 
-    virtual Move play();
+    virtual void play();
 private:
 };
 

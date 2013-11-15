@@ -29,7 +29,7 @@ class HumanPlayer : public AbstractPlayer
 public:
     HumanPlayer(HexdameGame *game, Color color);
 
-    virtual Move play();
+    virtual void play();
 
 private:
 };
