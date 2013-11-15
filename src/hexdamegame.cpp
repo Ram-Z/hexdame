@@ -21,8 +21,8 @@
 
 #include "player.h"
 
-HexdameGame::HexdameGame()
-    : QObject()
+HexdameGame::HexdameGame(QObject *parent)
+    : QObject(parent)
     , _size(9)
     , _currentColor(Black) // it'll swith on the first turn
 {

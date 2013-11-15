@@ -33,7 +33,7 @@ class HexdameGame : public QObject
     Q_OBJECT
 
 public:
-    HexdameGame();
+    HexdameGame(QObject *parent);
 
     inline const int size() const { return _size; }
 

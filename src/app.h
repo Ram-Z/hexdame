@@ -25,6 +25,8 @@
 #include <QtGui>
 #include <log4cxx/logger.h>
 
+class HexdameGame;
+
 class App : public QApplication
 {
     Q_OBJECT
@@ -46,10 +48,16 @@ public:
     QString getProjectCopyrightYears();
     QString getProjectInvocation();
 
+public slots:
+    void newGame();
+    void setWhitePlayer(int);
+    void setBlackPlayer(int);
+
 private:
     void initGUI();
     void interactiveMain();
     void consoleMain();
+    void loadActions();
 
     void printHelpMessage();
     void printVersionMessage();
@@ -64,6 +72,7 @@ private:
     std::string getKeyRepr(const std::string &key)const;
     std::string convert(const QString &str)const;
     QString convert(const std::string &str)const;
+    void loadStatusBar();
 
 
     static App *_instance;
@@ -72,6 +81,7 @@ private:
     bool _gui;
     bool _interactive;
     std::shared_ptr<QMainWindow> _mainwindow;
+    HexdameGame *_game;
 };
 
 #endif

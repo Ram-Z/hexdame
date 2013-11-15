@@ -33,6 +33,7 @@
 #include "appinfo.h"
 #include "hexdameview.h"
 #include "hexdamegame.h"
+#include "player.h"
 
 namespace
 {
@@ -230,11 +231,12 @@ App::initGUI()
     // Construct the main window
     _mainwindow.reset(new QMainWindow);
 
-    HexdameGame *g = new HexdameGame();
-    HexdameView *b = new HexdameView(g);
-    _mainwindow->setCentralWidget(b);
+    loadActions();
+    loadStatusBar();
 
+    newGame();
 
+    // Display the main window
     // Setup the central widget
     // TODO test this on a non-tiling WM
     QDesktopWidget *desktopwidget = desktop();
@@ -242,22 +244,85 @@ App::initGUI()
     int preferredheight = 768;
     int leftmargin = (desktopwidget->width() - preferredwidth) / 2;
     int topmargin  = (desktopwidget->height() - preferredheight) / 2;
-
-    QWidget *centralwidget = _mainwindow->centralWidget();
-    centralwidget->setWindowTitle(getProjectName());
-
-    // Setup the toolbars
-    // ...
-
-
-    // Setup the icons
-    // ...
-
-    // Display the main window
-    _mainwindow->setVisible(true);
     _mainwindow->move(leftmargin, topmargin);
 
-    g->startNextTurn();
+    _mainwindow->setVisible(true);
+}
+
+void
+App::loadActions()
+{
+    QToolBar *toolbar = new QToolBar("maintoolbar", _mainwindow.get());
+    _mainwindow->addToolBar(Qt::TopToolBarArea, toolbar);
+
+    QMenu *menu = _mainwindow->menuBar()->addMenu(tr("&Game"));
+    //FIXME why does this not use the theme icon?
+    QAction *action = menu->addAction(QIcon::fromTheme("document-new"), tr("&New Game"));
+    toolbar->addAction(action);
+    connect(action, SIGNAL(triggered()), this, SLOT(newGame()));
+
+    menu = _mainwindow->menuBar()->addMenu(tr("&White"));
+    action = menu->addAction(tr("Human"));
+}
+
+void
+App::loadStatusBar()
+{
+    //TODO maybe not use a statusbar for this
+    QStatusBar *statusBar = _mainwindow->statusBar();
+    QStringList players{"Human", "Random"};
+
+    QComboBox *white = new QComboBox();
+    statusBar->addPermanentWidget(white);
+    white->addItems(players);
+    connect(white, SIGNAL(currentIndexChanged(int)), this, SLOT(setWhitePlayer(int)));
+
+    statusBar->addPermanentWidget(new QLabel("White"));
+
+    statusBar->showMessage("Test");
+
+    statusBar->addPermanentWidget(new QLabel("Black"));
+
+    QComboBox *black = new QComboBox();
+    statusBar->addPermanentWidget(black);
+    black->addItems(players);
+    connect(black, SIGNAL(currentIndexChanged(int)), this, SLOT(setBlackPlayer(int)));
+}
+
+void
+App::newGame()
+{
+    _game = new HexdameGame(this);
+    HexdameView *b = new HexdameView(_game);
+    _mainwindow->setCentralWidget(b);
+
+    _game->startNextTurn();
+}
+
+void
+App::setBlackPlayer(int idx)
+{
+    switch (idx) {
+        case 0:
+            _game->setBlackPlayer(new HumanPlayer(_game, Black));
+            break;
+        case 1:
+            _game->setBlackPlayer(new RandomPlayer(_game, Black));
+            break;
+    }
+}
+
+void
+App::setWhitePlayer(int idx)
+{
+    switch (idx) {
+        case 0:
+            _game->setWhitePlayer(new HumanPlayer(_game, White));
+            break;
+        case 1:
+            _game->setWhitePlayer(new RandomPlayer(_game, White));
+            break;
+    }
 }
 
 void

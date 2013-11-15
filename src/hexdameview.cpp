@@ -76,8 +76,8 @@ void HexdameView::GraphicsPieceItem::setState(const Piece &state)
     }
 }
 
-HexdameView::HexdameView(HexdameGame *game)
-    : QGraphicsView()
+HexdameView::HexdameView(HexdameGame *game, QWidget *parent)
+    : QGraphicsView(parent)
     , _game(game)
 {
     foreach (Coord c, _game->coords()) {

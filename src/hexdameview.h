@@ -70,7 +70,7 @@ class HexdameView : public QGraphicsView
     };
 
 public:
-    explicit HexdameView(HexdameGame *game);
+    explicit HexdameView(HexdameGame *game, QWidget *parent = 0);
 
 public slots:
     void updateBoard();
