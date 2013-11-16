@@ -21,6 +21,7 @@
 #define COMMONDEFS_H
 
 #include <QList>
+#include <QSet>
 
 class QDebug;
 
@@ -79,7 +80,8 @@ struct Move {
 
     inline const Coord &to() const { return path.last(); }
     bool operator==(const Move &m) const {
-        return this->from == m.from && this->to() == m.to() && this->taken == m.taken;
+        return this->from == m.from && this->to() == m.to()
+            && QSet<Coord>::fromList(this->taken) == QSet<Coord>::fromList(m.taken);
     }
 };
 

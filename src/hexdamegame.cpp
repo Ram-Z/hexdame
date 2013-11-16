@@ -267,7 +267,7 @@ HexdameGame::dfs(const Coord &c, Move move) const
                     } else if (newMove.path.size() == best_moves.at(0).path.size()) {
                         bool dup = false;
                         foreach (Move oldMove, best_moves) {
-                            if (dup = QSet<Coord>::fromList(oldMove.taken) == QSet<Coord>::fromList(newMove.taken)) {
+                            if (dup = oldMove == newMove) {
                                 // moves are equivalent
                                 break;
                             }
