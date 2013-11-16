@@ -21,6 +21,8 @@
 
 #include "player.h"
 
+#include <QtGlobal>
+
 HexdameGame::HexdameGame(QObject *parent)
     : QObject(parent)
     , _size(9)
@@ -120,6 +122,23 @@ HexdameGame::currentPlayerIsHuman() const
     return currentPlayer()->type() == AbstractPlayer::Human;
 }
 
+void
+HexdameGame::debugRightClick(Coord c)
+{
+    if (!debug()) return;
+
+    switch (at(c)) {
+        case BlackKing: rat(c) = BlackPawn; break;
+        case BlackPawn: rat(c) = Empty    ; break;
+        case Empty:     rat(c) = WhitePawn; break;
+        case WhitePawn: rat(c) = WhiteKing; break;
+        case WhiteKing: rat(c) = BlackKing; break;
+    }
+    // this will compute all moves
+    setDebugMode(true);
+    emit boardChanged();
+}
+
 bool
 HexdameGame::gameOver() const
 {
@@ -149,27 +168,29 @@ HexdameGame::kingPiece(Coord c)
 
 void
 HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
-
 {
-    if (oldCoord == newCoord) return;
     if (!isEmpty(newCoord)) return;
 
-    Move move;
-    bool valid = false;
-    foreach (move, _validMoves.value(oldCoord)) {
-        if (move.to() == newCoord) {
-            valid = true;
-            break;
-        }
-    }
+    if (debug()) {
+        if (newCoord == oldCoord) return;
 
-    //FIXME
-    if (!valid) {
         rat(newCoord) = at(oldCoord);
         rat(oldCoord) = Empty;
 
         emit boardChanged();
+
+        // probably not the right place but who cares
+        setDebugMode(true);
+
         return;
+    }
+
+    //FIXME use partial moves
+    Move move;
+    foreach (move, _validMoves.value(oldCoord)) {
+        if (move.to() == newCoord) {
+            break;
+        }
     }
 
     makeMove(move);
@@ -289,6 +310,20 @@ HexdameGame::dfs(const Coord &c, Move move) const
     }
 
     return best_moves;
+}
+
+void
+HexdameGame::setDebugMode(bool debug)
+{
+    _debug = debug;
+    if (debug) {
+        QHash<Coord,QList<Move>> moves;
+        moves.unite(computeValidMoves(White));
+        moves.unite(computeValidMoves(Black));
+        _validMoves = moves;
+    } else {
+        computeValidMoves(currentColor());
+    }
 }
 
 void

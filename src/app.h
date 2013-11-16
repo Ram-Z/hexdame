@@ -52,6 +52,7 @@ public slots:
     void newGame();
     void setWhitePlayer(int);
     void setBlackPlayer(int);
+    void setDebugMode(bool);
 
 private:
     void initGUI();
@@ -81,7 +82,7 @@ private:
     bool _gui;
     bool _interactive;
     std::shared_ptr<QMainWindow> _mainwindow;
-    HexdameGame *_game;
+    HexdameGame *_game = 0;
 };
 
 #endif

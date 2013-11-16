@@ -77,6 +77,7 @@ public slots:
 
 signals:
     void playerMoved(Coord oldCoord, Coord newCoord);
+    void rightClicked(Coord);
 
 protected:
     void mouseReleaseEvent(QMouseEvent *event);

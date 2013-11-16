@@ -234,10 +234,6 @@ App::initGUI()
     loadActions();
     loadStatusBar();
 
-    newGame();
-
-    // Display the main window
-    // Setup the central widget
     // TODO test this on a non-tiling WM
     QDesktopWidget *desktopwidget = desktop();
     int preferredwidth = 1024;
@@ -246,7 +242,10 @@ App::initGUI()
     int topmargin  = (desktopwidget->height() - preferredheight) / 2;
     _mainwindow->move(leftmargin, topmargin);
 
+    // Display the main window
     _mainwindow->setVisible(true);
+
+    newGame();
 }
 
 void
@@ -261,8 +260,9 @@ App::loadActions()
     toolbar->addAction(action);
     connect(action, SIGNAL(triggered()), this, SLOT(newGame()));
 
-    menu = _mainwindow->menuBar()->addMenu(tr("&White"));
-    action = menu->addAction(tr("Human"));
+    action = toolbar->addAction(tr("&Debug"));
+    action->setCheckable(true);
+    connect(action, SIGNAL(triggered(bool)), this, SLOT(setDebugMode(bool)));
 }
 
 void
@@ -292,7 +292,11 @@ App::loadStatusBar()
 void
 App::newGame()
 {
+    if (_game) delete _game;
+
+    //TODO use the settings from the QActions
     _game = new HexdameGame(this);
+
     HexdameView *b = new HexdameView(_game);
     _mainwindow->setCentralWidget(b);
 
@@ -323,6 +327,12 @@ App::setWhitePlayer(int idx)
             _game->setWhitePlayer(new RandomPlayer(_game, White));
             break;
     }
+}
+
+void
+App::setDebugMode(bool debug)
+{
+    _game->setDebugMode(debug);
 }
 
 void

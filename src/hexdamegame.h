@@ -65,6 +65,8 @@ public:
 
     inline Color color(const Coord &c) const { return Hexdame::color(at(c)); }
 
+    inline bool debug() const { return _debug; }
+
 public slots:
     void makeMove(const Coord &oldCoord, const Coord &newCoord);
     void makeMove(const Move &move);
@@ -73,6 +75,9 @@ public slots:
 
     void setBlackPlayer(AbstractPlayer *player);
     void setWhitePlayer(AbstractPlayer *player);
+
+    void setDebugMode(bool debug);
+    void debugRightClick(Coord c);
 
 signals:
     void boardChanged();
@@ -100,6 +105,8 @@ private:
     AbstractPlayer *_white = 0;
     AbstractPlayer *_black = 0;
     Color _currentColor;
+
+    bool _debug = false;
 };
 
 #endif

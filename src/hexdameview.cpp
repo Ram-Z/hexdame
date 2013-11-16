@@ -24,6 +24,7 @@
 #include <qmath.h>
 #include <QMouseEvent>
 
+#include <QtGlobal>
 #include <QtDebug>
 
 HexdameView::GraphicsHexItem::GraphicsHexItem(Coord c, QGraphicsItem *parent)
@@ -105,12 +106,15 @@ HexdameView::HexdameView(HexdameGame *game, QWidget *parent)
             _game, SLOT(makeMove(Coord,Coord)));
     connect(_game, SIGNAL(boardChanged()),
             this, SLOT(updateBoard()));
+    connect(this, SIGNAL(rightClicked(Coord)),
+            _game, SLOT(debugRightClick(Coord)));
 }
 
 void
 HexdameView::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::RightButton) return;
+    if (!_game->debug() && event->button() == Qt::RightButton) return;
+
     GraphicsHexItem *hex = 0;
     GraphicsPieceItem *piece = 0;
     foreach (QGraphicsItem * item, items(event->pos())) {
@@ -122,11 +126,20 @@ HexdameView::mousePressEvent(QMouseEvent *event)
         }
     }
 
+    if (_game->debug()) {
+        if (event->button() == Qt::RightButton) {
+            emit rightClicked(hex->coord());
+            return;
+        }
+    }
+
     // not selected a piece
     if (!piece) return;
 
-    if (!_game->currentPlayerIsHuman()) return;
-  //  if (color(piece->state()) != _game->currentColor()) return;
+    if (!_game->debug()) {
+        if (!_game->currentPlayerIsHuman()) return;
+        if (color(piece->state()) != _game->currentColor()) return;
+    }
 
     QGraphicsView::mousePressEvent(event);
 
@@ -191,17 +204,12 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
     delete lines;
 
     if (hex && !piece) {
-#define ALL_MOVES
-#ifndef ALL_MOVES
-        if (dests.contains(hex)) {
-#endif
+        if (_game->debug() || dests.contains(hex)) {
             Coord oldCoord = hexFrom->coord();
             Coord newCoord = hex->coord();
 
             emit playerMoved(oldCoord, newCoord);
-#ifndef ALL_MOVES
         }
-#endif
     }
 
     dests.clear();
