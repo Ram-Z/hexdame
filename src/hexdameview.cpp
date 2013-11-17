@@ -149,13 +149,13 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     // draw it on top
     hexFrom->setZValue(1);
 
-    QList<Move> moves = _game->validMoves(hexFrom->coord());
+    QMultiHash<Coord, Move> moves = _game->validMoves(hexFrom->coord());
     lines = new QGraphicsItemGroup();
-    foreach (Move move, moves) {
-        QPointF from = coordToHex.value(move.from)->pos();
+    for (auto move = moves.constBegin(); move != moves.constEnd(); ++move) {
+        QPointF from = hexFrom->pos();
         QPointF to;
         QColor col(qrand() % 255, qrand() % 255, qrand() % 255);
-        foreach (Coord c, move.path) {
+        foreach (Coord c, move.value().path) {
             to = coordToHex.value(c)->pos();
 
             QGraphicsLineItem *line = new QGraphicsLineItem(QLineF(from, to));
@@ -165,10 +165,10 @@ HexdameView::mousePressEvent(QMouseEvent *event)
 
             from = coordToHex.value(c)->pos();
 
-            GraphicsHexItem *dest = qgraphicsitem_cast<GraphicsHexItem *>(coordToHex.value(move.path.last()));
-            dest->setBrush(Qt::Dense1Pattern);
-            dests << dest;
         }
+        GraphicsHexItem *dest = qgraphicsitem_cast<GraphicsHexItem *>(coordToHex.value(move.key()));
+        dest->setBrush(Qt::Dense1Pattern);
+        dests << dest;
     }
     scene.addItem(lines);
 }

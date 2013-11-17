@@ -22,6 +22,7 @@
 
 #include <QList>
 #include <QSet>
+#include <QtGlobal>
 
 class QDebug;
 
@@ -74,13 +75,16 @@ struct Coord {
 };
 
 struct Move {
-    Coord from;
     QList<Coord> path;
     QList<Coord> taken;
 
-    inline const Coord &to() const { return path.last(); }
+    Move() { path << Coord{-1,-1}; }
+    Move(const Coord &from) { path << from; }
+    Move(const Move &other) { path = other.path; taken = other.taken; }
+    inline const Coord &from() const { return path.first(); }
+    inline const Coord &to()   const { return path.last(); }
     bool operator==(const Move &m) const {
-        return this->from == m.from && this->to() == m.to()
+        return this->from() == m.from() && this->to() == m.to()
             && QSet<Coord>::fromList(this->taken) == QSet<Coord>::fromList(m.taken);
     }
 };

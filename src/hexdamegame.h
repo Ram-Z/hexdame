@@ -47,9 +47,8 @@ public:
     bool canJump(int x, int y) const;
     bool canJump(const Coord &c) const { return canJump(c.x, c.y); }
 
-    QList<Move> validMoves(const Coord &c) const { return _validMoves.value(c); }
-
-    QHash< Coord, QList< Move > > computeValidMoves(Color col);
+    const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
+    QMultiHash<Coord, Move> validMoves(const Coord &c) const { return _validMoves.value(c); }
 
     Color currentColor() const { return _currentColor; }
     bool currentPlayerIsHuman() const;
@@ -87,9 +86,8 @@ signals:
     void currentHumanPlayer(Color);
 
 private:
-    const QList<Move> possibleMoves(int x, int y) const { return possibleMoves(Coord {x, y}); }
-    const QList<Move> possibleMoves(const Coord &c) const;
-    QList<Move> dfs(const Coord &c, Move move = Move { -1, -1}) const;
+    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
+    void dfs(const Coord &c, Move move = Move({-1, -1}));
 
     void kingPiece(Coord c);
 
@@ -100,7 +98,8 @@ private:
     int cntWhite = 0;
     int cntBlack = 0;
 
-    QHash<Coord, QList<Move>> _validMoves;
+    QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
+    int _maxTaken = 0;
 
     AbstractPlayer *_white = 0;
     AbstractPlayer *_black = 0;
