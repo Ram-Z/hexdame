@@ -68,7 +68,8 @@ public:
 
 public slots:
     void makeMove(const Coord &oldCoord, const Coord &newCoord);
-    void makeMove(const Move &move);
+    void makeMove(const Move &move, bool partial = false);
+    void makePartialMove(const Coord &oldCoord, const Coord &newCoord);
 
     void startNextTurn();
 

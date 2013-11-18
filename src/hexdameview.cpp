@@ -104,6 +104,8 @@ HexdameView::HexdameView(HexdameGame *game, QWidget *parent)
     // connect signals
     connect(this, SIGNAL(playerMoved(Coord, Coord)),
             _game, SLOT(makeMove(Coord,Coord)));
+    connect(this, SIGNAL(partialMove(Coord,Coord)),
+            _game, SLOT(makePartialMove(Coord,Coord)));
     connect(_game, SIGNAL(boardChanged()),
             this, SLOT(updateBoard()));
     connect(this, SIGNAL(rightClicked(Coord)),
@@ -117,7 +119,7 @@ HexdameView::mousePressEvent(QMouseEvent *event)
 
     GraphicsHexItem *hex = 0;
     GraphicsPieceItem *piece = 0;
-    foreach (QGraphicsItem * item, items(event->pos())) {
+    foreach (QGraphicsItem *item, items(event->pos())) {
         if (item->type() == PieceItem) {
             piece = qgraphicsitem_cast<GraphicsPieceItem *>(item);
         }
@@ -150,6 +152,43 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     hexFrom->setZValue(1);
 
     QMultiHash<Coord, Move> moves = _game->validMoves(hexFrom->coord());
+    QList<Coord> partDests;
+    foreach (const Coord &to, moves.uniqueKeys()) {
+        QList<Move> m = moves.values(to);
+        foreach (const Move &d, m) {
+            qDebug() << "path" << d.path;
+            qDebug() << "taken" << QSet<Coord>::fromList(d.taken);
+        }
+        if (m.size() == 1) continue;
+
+        bool same = true, first = true;
+        Coord common = m.first().path.at(0);
+        QList<Coord> path, taken;
+        path << m.first().path.first();
+        int i;
+        for (i = 1; i < m.first().path.size(); ++i) {
+            common = m.first().path.at(i);
+            if (same) {
+                foreach (Move mm, m) {
+                    same &= mm.path.at(i) == common;
+                    if (!same) { break; }
+                }
+            }
+            if (!same) break;
+        }
+        for (int k = 0; k < m.size(); ++k) {
+            Move newMove = m.at(k);
+            moves.remove(to, m.at(k));
+            for (int j = i+1; j < m.at(k).path.size(); ++j) {
+                newMove.path.removeLast();
+                newMove.taken.removeLast();
+            }
+            qDebug() << newMove.path;
+            partDests << newMove.to();
+            moves.insert(newMove.to(), newMove);
+        }
+    }
+
     lines = new QGraphicsItemGroup();
     for (auto move = moves.constBegin(); move != moves.constEnd(); ++move) {
         QPointF from = hexFrom->pos();
@@ -167,8 +206,13 @@ HexdameView::mousePressEvent(QMouseEvent *event)
 
         }
         GraphicsHexItem *dest = qgraphicsitem_cast<GraphicsHexItem *>(coordToHex.value(move.key()));
-        dest->setBrush(Qt::Dense1Pattern);
-        dests << dest;
+        if (partDests.contains(move.key())) {
+            dest->setBrush(Qt::Dense3Pattern);
+            _partialDests << dest;
+        } else {
+            dest->setBrush(Qt::Dense1Pattern);
+            _dests << dest;
+        }
     }
     scene.addItem(lines);
 }
@@ -198,21 +242,26 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
     hexFrom->setZValue(0);
 
     scene.removeItem(lines);
-    foreach (GraphicsHexItem* h, dests) {
+    foreach (GraphicsHexItem* h, _dests) {
+        h->setBrush(Qt::NoBrush);
+    }
+    foreach (GraphicsHexItem* h, _partialDests) {
         h->setBrush(Qt::NoBrush);
     }
     delete lines;
 
     if (hex && !piece) {
-        if (_game->debug() || dests.contains(hex)) {
-            Coord oldCoord = hexFrom->coord();
-            Coord newCoord = hex->coord();
+        Coord oldCoord = hexFrom->coord();
+        Coord newCoord = hex->coord();
 
+        if (_partialDests.contains(hex))
+            emit partialMove(oldCoord, newCoord);
+        else if (_game->debug() || _dests.contains(hex))
             emit playerMoved(oldCoord, newCoord);
-        }
     }
 
-    dests.clear();
+    _dests.clear();
+    _partialDests.clear();
     hexFrom = 0;
     selectedPiece = 0;
 }

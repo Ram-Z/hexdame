@@ -78,7 +78,7 @@ struct Move {
     QList<Coord> path;
     QList<Coord> taken;
 
-    Move() { path << Coord{-1,-1}; }
+    Move() {}
     Move(const Coord &from) { path << from; }
     Move(const Move &other) { path = other.path; taken = other.taken; }
     inline const Coord &from() const { return path.first(); }

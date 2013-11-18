@@ -77,6 +77,7 @@ public slots:
 
 signals:
     void playerMoved(Coord oldCoord, Coord newCoord);
+    void partialMove(Coord oldCoord, Coord newCoord);
     void rightClicked(Coord);
 
 protected:
@@ -91,7 +92,8 @@ private:
     GraphicsHexItem *hexFrom = 0;
     GraphicsPieceItem *selectedPiece = 0;
     QGraphicsItemGroup *lines;
-    QList<GraphicsHexItem*> dests;
+    QList<GraphicsHexItem *> _dests;
+    QList<GraphicsHexItem *> _partialDests;
 
     HexdameGame *_game;
 

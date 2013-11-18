@@ -143,7 +143,7 @@ HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
 }
 
 void
-HexdameGame::makeMove(const Move &move)
+HexdameGame::makeMove(const Move &move, bool partial)
 {
     rat(move.to()) = at(move.from());
     rat(move.from()) = Empty;
@@ -157,10 +157,58 @@ HexdameGame::makeMove(const Move &move)
         }
     }
 
-    kingPiece(move.to());
+    if (!partial)
+        kingPiece(move.to());
 
     emit boardChanged();
-    emit playerMoved();
+    if (!partial)
+        emit playerMoved();
+}
+
+void
+HexdameGame::makePartialMove(const Coord &oldCoord, const Coord &newCoord)
+{
+    if (!isEmpty(newCoord)) return;
+
+    if (debug()) {
+        if (newCoord == oldCoord) return;
+
+        rat(newCoord) = at(oldCoord);
+        rat(oldCoord) = Empty;
+
+        emit boardChanged();
+
+        // probably not the right place but who cares
+        setDebugMode(true);
+
+        return;
+    }
+
+    QMultiHash<Coord, Move> tmpHash = _validMoves.value(oldCoord);
+    _validMoves.clear();
+    Move m;
+    foreach (Move move, tmpHash.values()) {
+        // not a partial moves
+        if (move.to() == newCoord) continue;
+
+        m = Move();
+
+        m.path << move.path.takeFirst();
+
+        while (!move.path.empty() && move.path.first() != newCoord) {
+            m.path << move.path.takeFirst();
+            m.taken << move.taken.takeFirst();
+        }
+
+        if (!move.path.empty()) {
+            m.path << move.path.first();
+            m.taken << move.taken.first();
+            _validMoves[newCoord].insert(move.to(), move);
+            break;
+        }
+    }
+
+    makeMove(m, true);
 }
 
 
@@ -310,7 +358,7 @@ HexdameGame::dfs(const Coord &from, Move move)
                             _maxTaken = newMove.taken.size();
                         }
                         bool dup = false;
-                        foreach (Move oldMove, _validMoves.value(from)) {
+                        foreach (Move oldMove, _validMoves.value(move.from())) {
                             if (dup = oldMove == newMove) break; // moves are equivalent
                         }
                         if (!dup) _validMoves[newMove.from()].insert(to, newMove);
