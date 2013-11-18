@@ -152,13 +152,12 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     hexFrom->setZValue(1);
 
     QMultiHash<Coord, Move> moves = _game->validMoves(hexFrom->coord());
+
+    // partial move
     QList<Coord> partDests;
     foreach (const Coord &to, moves.uniqueKeys()) {
         QList<Move> m = moves.values(to);
-        foreach (const Move &d, m) {
-            qDebug() << "path" << d.path;
-            qDebug() << "taken" << QSet<Coord>::fromList(d.taken);
-        }
+        // not a partial move
         if (m.size() == 1) continue;
 
         bool same = true, first = true;
