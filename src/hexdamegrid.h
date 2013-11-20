@@ -62,6 +62,7 @@ private:
     void kingPiece(Coord c);
 
     QHash<Coord, Piece> _grid;
+
     mutable QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
     mutable int _maxTaken;
 

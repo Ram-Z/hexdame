@@ -41,19 +41,29 @@ HexdameGrid::HexdameGrid()
 }
 
 HexdameGrid::HexdameGrid(const HexdameGrid &other)
+    : _grid(other._grid)
+    , _cntWhite(other._cntWhite)
+    , _cntBlack(other._cntBlack)
 {
 
 }
 
 HexdameGrid &HexdameGrid::operator=(const HexdameGrid &other)
 {
-
+    if (this != &other) {
+        _grid = other._grid;
+        _cntWhite = other._cntWhite;
+        _cntBlack = other._cntBlack;
+        _validMoves.clear();
+        _maxTaken = 0;
+    }
+    return *this;
 }
 
 bool
 HexdameGrid::operator==(const HexdameGrid &other)
 {
-
+    return _grid == other._grid;
 }
 
 bool
