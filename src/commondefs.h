@@ -78,11 +78,9 @@ struct Move {
     QList<Coord> path;
     QList<Coord> taken;
 
-    Move() {}
-    Move(const Coord &from) { path << from; }
-    Move(const Move &other) { path = other.path; taken = other.taken; }
     inline const Coord &from() const { return path.first(); }
     inline const Coord &to()   const { return path.last(); }
+    inline bool empty() const { return path.empty(); }
     bool operator==(const Move &m) const {
         return this->from() == m.from() && this->to() == m.to()
             && QSet<Coord>::fromList(this->taken) == QSet<Coord>::fromList(m.taken);

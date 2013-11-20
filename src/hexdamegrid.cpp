@@ -148,8 +148,8 @@ HexdameGrid::computeValidMoves(Color col) const
                 if (!isEmpty(to)) break;
 
                 // create Move and add to list
-                Move m(from);
-                m.path << to;
+                Move m;
+                m.path << from << to;
                 _validMoves[from].insert(to, m);
 
                 if (isPawn(from)) break; // Pawns can't jump further than 1
@@ -165,8 +165,8 @@ HexdameGrid::dfs(const Coord &from, Move move) const
 {
     static Color col;
     static bool king;
-    if (move.from() == Coord { -1, -1}) {
-        move = Move(from);
+    if (move.empty()) {
+        move.path << from;
         col = color(from);
         king = isKing(from);
     }

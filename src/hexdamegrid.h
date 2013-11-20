@@ -57,7 +57,7 @@ public:
     bool gameOver() const;
 
 private:
-    void dfs(const Coord &c, Move move = Move({-1, -1})) const;
+    void dfs(const Coord &from, Move move = Move()) const;
 
     void kingPiece(Coord c);
 
