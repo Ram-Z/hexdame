@@ -38,9 +38,6 @@ public:
     Color currentColor() const { return _currentColor; }
     bool currentPlayerIsHuman() const;
 
-    const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
-    QMultiHash<Coord, Move> validMoves(const Coord &c) const { return _validMoves.value(c); }
-
     inline bool debug() const { return _debug; }
 
 public slots:
@@ -53,7 +50,7 @@ public slots:
     void setBlackPlayer(AbstractPlayer *player);
     void setWhitePlayer(AbstractPlayer *player);
 
-    void setDebugMode(bool debug);
+    void setDebugMode(bool debug) { _debug = debug; }
     void debugRightClick(Coord c);
     const HexdameGrid &grid() const { return _grid; }
 
@@ -68,7 +65,6 @@ private:
     AbstractPlayer *currentPlayer() const { return _currentColor == White ? _white : _black; }
 
     HexdameGrid _grid;
-    QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
 
     AbstractPlayer *_white = 0;
     AbstractPlayer *_black = 0;

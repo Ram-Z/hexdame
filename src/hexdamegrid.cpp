@@ -38,6 +38,8 @@ HexdameGrid::HexdameGrid()
             }
         }
     }
+
+    computeValidMoves(White);
 }
 
 HexdameGrid::HexdameGrid(const HexdameGrid &other)
@@ -108,15 +110,39 @@ HexdameGrid::makeMove(const Move &move, bool partial)
         _grid[c] = Empty;
     }
 
-    if (!partial)
+    if (partial) {
+        _validMoves.clear();
+        _maxTaken = 0;
+        dfs(move.to());
+    } else {
         kingPiece(move.to());
+        if (color(move.to()) == White)
+            computeValidMoves(Black);
+        if (color(move.to()) == Black)
+            computeValidMoves(White);
+    }
 }
 
-QHash<Coord, QMultiHash<Coord, Move>>
-HexdameGrid::computeValidMoves(Color col) const
+void
+HexdameGrid::move(const Coord &from, const Coord &to)
 {
-    _validMoves.clear();
+    if (!isEmpty(to)) return;
+
+    if (to == from) return;
+
+    _grid[to] = _grid.value(from);
+    _grid[from] = Empty;
+
+    computeValidMoves(None);
+}
+
+
+QHash<Coord, QMultiHash<Coord, Move>>
+HexdameGrid::computeValidMoves(Color col)
+{
     _maxTaken = 0;
+    _validMoves.clear();
+
     if (col == None) {
         QHash<Coord, QMultiHash<Coord, Move>> meh;
         meh.unite(computeValidMoves(White));
@@ -132,6 +158,11 @@ HexdameGrid::computeValidMoves(Color col) const
     }
 
     if (!_validMoves.empty()) return _validMoves;
+
+    if (col == White)
+        _validMoves.reserve(2*_cntWhite);
+    else if (col == Black)
+        _validMoves.reserve(2*_cntBlack);
 
     // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
     const static QList<Coord> l{Coord{1,0}, Coord{0,1}, Coord{1,1}, Coord{0,-1}, Coord{-1,0}, Coord{-1,-1}};
@@ -161,7 +192,7 @@ HexdameGrid::computeValidMoves(Color col) const
 }
 
 void
-HexdameGrid::dfs(const Coord &from, Move move) const
+HexdameGrid::dfs(const Coord &from, Move move)
 {
     static Color col;
     static bool king;

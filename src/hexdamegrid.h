@@ -42,7 +42,8 @@ public:
 
     QList<Coord> coords() const { return _grid.keys(); }
 
-    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col) const;
+    const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
+    const QMultiHash<Coord, Move> validMoves(Coord c) const { return _validMoves.value(c); }
 
     // convenience functions
     inline bool isWhite(const Coord &c) const { return Hexdame::isWhite(at(c)); }
@@ -53,17 +54,20 @@ public:
     inline Color  color(const Coord &c) const { return Hexdame::color(at(c)); }
 
     void makeMove(const Move &move, bool partial = false);
+    // does not check validity and calculates all valid moves, use for debug
+    void move(const Coord &from, const Coord &to);
 
     bool gameOver() const;
 
 private:
-    void dfs(const Coord &from, Move move = Move()) const;
+    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
+    void dfs(const Coord &from, Move move = Move());
 
     void kingPiece(Coord c);
 
     QHash<Coord, Piece> _grid;
 
-    mutable QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
+    QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
     mutable int _maxTaken;
 
     int _cntWhite = 0;

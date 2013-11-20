@@ -151,7 +151,7 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     // draw it on top
     hexFrom->setZValue(1);
 
-    QMultiHash<Coord, Move> moves = _game->validMoves(hexFrom->coord());
+    QMultiHash<Coord, Move> moves = _game->grid().validMoves(hexFrom->coord());
 
     // partial move
     QList<Coord> partDests;

@@ -57,32 +57,19 @@ HexdameGame::debugRightClick(Coord c)
 }
 
 void
-HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
+HexdameGame::makeMove(const Coord &from, const Coord &to)
 {
-    if (!_grid.isEmpty(newCoord)) return;
+    if (!_grid.isEmpty(to)) return;
 
     if (debug()) {
-        if (newCoord == oldCoord) return;
-
-        _grid[newCoord] = _grid.at(oldCoord);
-        _grid[oldCoord] = Empty;
+        _grid.move(from, to);
 
         emit boardChanged();
-
-        // probably not the right place but who cares
-        setDebugMode(true);
 
         return;
     }
 
-    //FIXME use partial moves
-    Move move;
-    foreach (move, _validMoves.value(oldCoord).values(newCoord)) {
-        if (move.to() == newCoord) {
-            break;
-        }
-    }
-
+    Move move = _grid.validMoves(from).value(to);
     makeMove(move);
 }
 
@@ -97,36 +84,29 @@ HexdameGame::makeMove(const Move &move, bool partial)
 
 
 void
-HexdameGame::makePartialMove(const Coord &oldCoord, const Coord &newCoord)
+HexdameGame::makePartialMove(const Coord &from, const Coord &to)
 {
-    if (!_grid.isEmpty(newCoord)) return;
+    if (!_grid.isEmpty(to)) return;
 
     if (debug()) {
-        if (newCoord == oldCoord) return;
-
-        _grid[newCoord] = _grid.at(oldCoord);
-        _grid[oldCoord] = Empty;
+        _grid.move(from, to);
 
         emit boardChanged();
-
-        // probably not the right place but who cares
-        setDebugMode(true);
 
         return;
     }
 
-    QMultiHash<Coord, Move> tmpHash = _validMoves.value(oldCoord);
-    _validMoves.clear();
+    QMultiHash<Coord, Move> tmpHash = _grid.validMoves(from);
     Move m;
     foreach (Move move, tmpHash.values()) {
         // not a partial moves
-        if (move.to() == newCoord) continue;
+        if (move.to() == to) continue;
 
         m = Move();
 
         m.path << move.path.takeFirst();
 
-        while (!move.path.empty() && move.path.first() != newCoord) {
+        while (!move.path.empty() && move.path.first() != to) {
             m.path << move.path.takeFirst();
             m.taken << move.taken.takeFirst();
         }
@@ -134,24 +114,11 @@ HexdameGame::makePartialMove(const Coord &oldCoord, const Coord &newCoord)
         if (!move.path.empty()) {
             m.path << move.path.first();
             m.taken << move.taken.first();
-            _validMoves[newCoord].insert(move.to(), move);
             break;
         }
     }
 
     makeMove(m, true);
-}
-
-
-void
-HexdameGame::setDebugMode(bool debug)
-{
-    _debug = debug;
-    if (debug) {
-        _validMoves = _grid.computeValidMoves(None);
-    } else {
-        _validMoves = _grid.computeValidMoves(currentColor());
-    }
 }
 
 void
@@ -189,8 +156,6 @@ HexdameGame::startNextTurn()
         } else {
             _currentColor = White;
         }
-
-        _validMoves = _grid.computeValidMoves(_currentColor);
 
         currentPlayer()->play();
     }

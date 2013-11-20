@@ -36,7 +36,7 @@ void RandomPlayer::play()
     while (QTime::currentTime() < wait)
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 
-    QHash<Coord, QMultiHash<Coord, Move>> moves = _game->validMoves();
+    QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
 
     int rand = qrand() % moves.size();
     Coord randCoord = moves.keys().at(rand);
