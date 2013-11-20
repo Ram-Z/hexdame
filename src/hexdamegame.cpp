@@ -25,7 +25,6 @@
 
 HexdameGame::HexdameGame(QObject *parent)
     : QObject(parent)
-    , _currentColor(Black) // it'll swith on the first turn
 {
     setWhitePlayer(new HumanPlayer(this, White));
     setBlackPlayer(new HumanPlayer(this, Black));

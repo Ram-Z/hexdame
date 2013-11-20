@@ -68,7 +68,7 @@ private:
 
     AbstractPlayer *_white = 0;
     AbstractPlayer *_black = 0;
-    Color _currentColor;
+    Color _currentColor = None;
 
     bool _debug = false;
 };
