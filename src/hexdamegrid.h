@@ -40,6 +40,11 @@ public:
     Piece &operator[](const Coord &c) { return _grid[c]; }
     const Piece operator[](const Coord &c) const { return at(c); }
 
+    // allow foreach
+    typedef QHash<Coord, Piece>::const_iterator const_iterator ;
+    const const_iterator begin() const { return _grid.begin(); }
+    const const_iterator   end() const { return _grid.end(); }
+
     QList<Coord> coords() const { return _grid.keys(); }
 
     const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
