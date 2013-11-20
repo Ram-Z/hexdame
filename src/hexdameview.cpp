@@ -138,9 +138,12 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     // not selected a piece
     if (!piece) return;
 
+    QMultiHash<Coord, Move> moves = _game->grid().validMoves(piece->coord());
+
     if (!_game->debug()) {
         if (!_game->currentPlayerIsHuman()) return;
         if (color(piece->state()) != _game->currentColor()) return;
+        if (moves.empty()) return;
     }
 
     QGraphicsView::mousePressEvent(event);
@@ -150,8 +153,6 @@ HexdameView::mousePressEvent(QMouseEvent *event)
 
     // draw it on top
     hexFrom->setZValue(1);
-
-    QMultiHash<Coord, Move> moves = _game->grid().validMoves(hexFrom->coord());
 
     // partial move
     QList<Coord> partDests;
