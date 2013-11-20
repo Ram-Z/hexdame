@@ -81,11 +81,11 @@ HexdameView::HexdameView(HexdameGame *game, QWidget *parent)
     : QGraphicsView(parent)
     , _game(game)
 {
-    foreach (Coord c, _game->coords()) {
+    foreach (Coord c, _game->grid().coords()) {
         GraphicsHexItem *h = new GraphicsHexItem(c);
         coordToHex[c] = h;
 
-        Piece piece = _game->at(c);
+        Piece piece = _game->grid().at(c);
         GraphicsPieceItem *p = new GraphicsPieceItem(piece, h);
         coordToPiece[c] = p;
 
@@ -267,8 +267,8 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
 
 void HexdameView::updateBoard()
 {
-    foreach (Coord c, _game->coords()) {
-        Piece piece = _game->at(c);
+    foreach (Coord c, _game->grid().coords()) {
+        Piece piece = _game->grid().at(c);
         coordToPiece[c]->setState(piece);
     }
 }

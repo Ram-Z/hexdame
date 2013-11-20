@@ -25,41 +25,12 @@
 
 HexdameGame::HexdameGame(QObject *parent)
     : QObject(parent)
-    , _size(9)
     , _currentColor(Black) // it'll swith on the first turn
 {
-    _grid.reserve(_size * _size);
-
-    for (int x = 0; x < _size; ++x) {
-        for (int y = 0; y < _size; ++y) {
-            int s = size() / 2;
-            if (qAbs(x - y) <= s) {
-                _grid[Coord {x, y}] = Empty;
-            }
-            if (x < s && y < s) {
-                _grid[Coord {x, y}] = WhitePawn;
-                ++cntWhite;
-            } else if (x > s && y > s) {
-                _grid[Coord {x, y}] = BlackPawn;
-                ++cntBlack;
-            }
-        }
-    }
-
     setWhitePlayer(new HumanPlayer(this, White));
     setBlackPlayer(new HumanPlayer(this, Black));
 
     connect(this, SIGNAL(playerMoved()), SLOT(startNextTurn()));
-}
-
-bool
-HexdameGame::canJump(int x, int y) const
-{
-    for (int dx = -1; dx <= 1; ++dx) {
-        for (int dy = -1; dy <= 1; ++dy) {
-            Piece dc = at(x + dx, y + dx);
-        }
-    }
 }
 
 bool
@@ -73,55 +44,28 @@ HexdameGame::debugRightClick(Coord c)
 {
     if (!debug()) return;
 
-    switch (at(c)) {
-        case BlackKing: rat(c) = BlackPawn; break;
-        case BlackPawn: rat(c) = Empty    ; break;
-        case Empty:     rat(c) = WhitePawn; break;
-        case WhitePawn: rat(c) = WhiteKing; break;
-        case WhiteKing: rat(c) = BlackKing; break;
+    switch (_grid.at(c)) {
+        case BlackKing: _grid[c] = BlackPawn; break;
+        case BlackPawn: _grid[c] = Empty    ; break;
+        case Empty:     _grid[c] = WhitePawn; break;
+        case WhitePawn: _grid[c] = WhiteKing; break;
+        case WhiteKing: _grid[c] = BlackKing; break;
     }
     // this will compute all moves
     setDebugMode(true);
     emit boardChanged();
 }
 
-bool
-HexdameGame::gameOver() const
-{
-    //TODO check for draws
-    return !cntBlack || !cntWhite;
-}
-
-void
-HexdameGame::kingPiece(Coord c)
-{
-    if (color(c) == None) return;
-
-    if (color(c) == White) {
-        if (c.x == 8 || c.y == 8) {
-            _grid[c] = WhiteKing;
-            return;
-        }
-    }
-
-    if (color(c) == Black) {
-        if (c.x == 0 || c.y == 0) {
-            _grid[c] = BlackKing;
-            return;
-        }
-    }
-}
-
 void
 HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
 {
-    if (!isEmpty(newCoord)) return;
+    if (!_grid.isEmpty(newCoord)) return;
 
     if (debug()) {
         if (newCoord == oldCoord) return;
 
-        rat(newCoord) = at(oldCoord);
-        rat(oldCoord) = Empty;
+        _grid[newCoord] = _grid.at(oldCoord);
+        _grid[oldCoord] = Empty;
 
         emit boardChanged();
 
@@ -145,36 +89,23 @@ HexdameGame::makeMove(const Coord &oldCoord, const Coord &newCoord)
 void
 HexdameGame::makeMove(const Move &move, bool partial)
 {
-    rat(move.to()) = at(move.from());
-    rat(move.from()) = Empty;
-
-    foreach (Coord c, move.taken) {
-        rat(c) = Empty;
-        if (_currentColor == White) {
-            --cntBlack;
-        } else if (_currentColor == Black) {
-            --cntWhite;
-        }
-    }
-
-    if (!partial)
-        kingPiece(move.to());
-
+    _grid.makeMove(move, partial);
     emit boardChanged();
     if (!partial)
         emit playerMoved();
 }
 
+
 void
 HexdameGame::makePartialMove(const Coord &oldCoord, const Coord &newCoord)
 {
-    if (!isEmpty(newCoord)) return;
+    if (!_grid.isEmpty(newCoord)) return;
 
     if (debug()) {
         if (newCoord == oldCoord) return;
 
-        rat(newCoord) = at(oldCoord);
-        rat(oldCoord) = Empty;
+        _grid[newCoord] = _grid.at(oldCoord);
+        _grid[oldCoord] = Empty;
 
         emit boardChanged();
 
@@ -217,9 +148,9 @@ HexdameGame::setDebugMode(bool debug)
 {
     _debug = debug;
     if (debug) {
-        computeValidMoves(None);
+        _validMoves = _grid.computeValidMoves(None);
     } else {
-        computeValidMoves(currentColor());
+        _validMoves = _grid.computeValidMoves(currentColor());
     }
 }
 
@@ -252,14 +183,14 @@ HexdameGame::setWhitePlayer(AbstractPlayer *player)
 void
 HexdameGame::startNextTurn()
 {
-    if (!gameOver()) {
+    if (!_grid.gameOver()) {
         if (_currentColor == White) {
             _currentColor = Black;
         } else {
             _currentColor = White;
         }
 
-        computeValidMoves(_currentColor);
+        _validMoves = _grid.computeValidMoves(_currentColor);
 
         currentPlayer()->play();
     }
@@ -270,107 +201,4 @@ operator<<(QDebug dbg, const Coord &coord)
 {
     dbg.nospace() << "Coord(" << coord.x << "," << coord.y << ")";
     return dbg.space();
-}
-
-QHash<Coord, QMultiHash<Coord, Move>>
-HexdameGame::computeValidMoves(Color col)
-{
-    _validMoves.clear();
-    _maxTaken = 0;
-    if (col == None) {
-        QHash<Coord, QMultiHash<Coord, Move>> meh;
-        meh.unite(computeValidMoves(White));
-        meh.unite(computeValidMoves(Black));
-        _validMoves = meh;
-        return _validMoves;
-    }
-
-    foreach (Coord from, coords()) {
-        if (color(from) != col) continue;
-
-        dfs(from);
-    }
-
-    if (!_validMoves.empty()) return _validMoves;
-
-    // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
-    const static QList<Coord> l{Coord{1,0}, Coord{0,1}, Coord{1,1}, Coord{0,-1}, Coord{-1,0}, Coord{-1,-1}};
-    foreach(Coord from, coords()) {
-        if (color(from) != col) continue;
-        for (int i = 0; i < l.size(); ++i) {
-            if (i <  3 && isPawn(from) && isBlack(from)) i = 3; // jump to Blacks moves
-            if (i >= 3 && isPawn(from) && isWhite(from)) break; // ignore the rest
-
-            for (int j = 1; j < 9; ++j) {
-                Coord to = from + j*l.at(i);
-
-                if (!_grid.contains(to)) break;
-                if (!isEmpty(to)) break;
-
-                // create Move and add to list
-                Move m(from);
-                m.path << to;
-                _validMoves[from].insert(to, m);
-
-                if (isPawn(from)) break; // Pawns can't jump further than 1
-            }
-        }
-    }
-
-    return _validMoves;
-}
-
-void
-HexdameGame::dfs(const Coord &from, Move move)
-{
-    static Color col;
-    static bool king;
-    if (move.from() == Coord { -1, -1}) {
-        move = Move(from);
-        col = color(from);
-        king = isKing(from);
-    }
-
-    const static QList<Coord> l{Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1}, Coord{1,1}, Coord{-1,-1}};
-    foreach (Coord lv, l) {
-        for (int i = 1; i < 9; ++i) {
-            Coord over = from + i*lv;
-
-            if (!_grid.contains(over)) break;     // not on the grid
-            if (col == color(over)) break;        // same colour
-            if (move.taken.contains(over)) break; // already took piece
-
-            if (col == -color(over)) {
-                while (++i < 9) {
-                    Coord to = from + i*lv;
-                    // non-empty cell after jumping
-                    if (!_grid.contains(to) || (move.from() != to && !isEmpty(to))) { i = 9; break; }
-
-                    // create a new Move
-                    Move newMove(move);
-                    newMove.taken << over;
-                    newMove.path << to;
-
-                    // update/reset validMoves list
-                    if (newMove.taken.size() >= _maxTaken) {
-                        if (newMove.taken.size() > _maxTaken) {
-                            _validMoves.clear();
-                            _maxTaken = newMove.taken.size();
-                        }
-                        bool dup = false;
-                        foreach (Move oldMove, _validMoves.value(move.from())) {
-                            if (dup = oldMove == newMove) break; // moves are equivalent
-                        }
-                        if (!dup) _validMoves[newMove.from()].insert(to, newMove);
-                    }
-
-                    // recursive call
-                    dfs(to, newMove);
-
-                    if (!king) break; // Pawns can't jump further than 1
-                }
-            }
-            if (!king) break; // Pawns can't jump further than 1
-        }
-    }
 }

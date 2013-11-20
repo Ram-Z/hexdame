@@ -20,7 +20,7 @@
 #ifndef HEXDAMEGAME_H
 #define HEXDAMEGAME_H
 
-#include "commondefs.h"
+#include "hexdamegrid.h"
 
 #include <QtDebug> // needed for Q_ASSERT
 
@@ -35,34 +35,11 @@ class HexdameGame : public QObject
 public:
     HexdameGame(QObject *parent);
 
-    inline const int size() const { return _size; }
-
-    const Piece at(int x, int y) const { return at(Coord {x, y}); }
-    const Piece at(const Coord &c) const { Q_ASSERT(_grid.contains(c)); return _grid.value(c); }
-    Piece &rat(int x, int y) { return _grid[Coord {x, y}]; }
-    Piece &rat(const Coord &c) { return _grid[c]; }
-
-    QList<Coord> coords() const { return _grid.keys(); }
-
-    bool canJump(int x, int y) const;
-    bool canJump(const Coord &c) const { return canJump(c.x, c.y); }
-
-    const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
-    QMultiHash<Coord, Move> validMoves(const Coord &c) const { return _validMoves.value(c); }
-
     Color currentColor() const { return _currentColor; }
     bool currentPlayerIsHuman() const;
 
-    bool gameOver() const;
-
-    // convenience functions
-    inline bool isWhite(const Coord &c) const { return Hexdame::isWhite(at(c)); }
-    inline bool isBlack(const Coord &c) const { return Hexdame::isBlack(at(c)); }
-    inline bool isEmpty(const Coord &c) const { return Hexdame::isEmpty(at(c)); }
-    inline bool  isPawn(const Coord &c) const { return Hexdame::isPawn(at(c)); }
-    inline bool  isKing(const Coord &c) const { return Hexdame::isKing(at(c)); }
-
-    inline Color color(const Coord &c) const { return Hexdame::color(at(c)); }
+    const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
+    QMultiHash<Coord, Move> validMoves(const Coord &c) const { return _validMoves.value(c); }
 
     inline bool debug() const { return _debug; }
 
@@ -78,6 +55,7 @@ public slots:
 
     void setDebugMode(bool debug);
     void debugRightClick(Coord c);
+    const HexdameGrid &grid() const { return _grid; }
 
 signals:
     void boardChanged();
@@ -87,20 +65,10 @@ signals:
     void currentHumanPlayer(Color);
 
 private:
-    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
-    void dfs(const Coord &c, Move move = Move({-1, -1}));
-
-    void kingPiece(Coord c);
-
     AbstractPlayer *currentPlayer() const { return _currentColor == White ? _white : _black; }
 
-    int _size = 0;
-    QHash<Coord, Piece> _grid;
-    int cntWhite = 0;
-    int cntBlack = 0;
-
+    HexdameGrid _grid;
     QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
-    int _maxTaken = 0;
 
     AbstractPlayer *_white = 0;
     AbstractPlayer *_black = 0;
