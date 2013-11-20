@@ -68,11 +68,16 @@ HexdameGrid::operator==(const HexdameGrid &other)
     return _grid == other._grid;
 }
 
-bool
-HexdameGrid::gameOver() const
+Color
+HexdameGrid::winner() const
 {
     //TODO check for draws
-    return !_cntBlack || !_cntWhite;
+    if (_cntBlack == 0)
+        return White;
+    if (_cntWhite == 0)
+        return Black;
+
+    return None;
 }
 
 void

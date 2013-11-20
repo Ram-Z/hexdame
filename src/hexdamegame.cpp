@@ -20,14 +20,15 @@
 #include "hexdamegame.h"
 
 #include "player.h"
+#include "player/heuristic.h"
 
 #include <QtGlobal>
 
 HexdameGame::HexdameGame(QObject *parent)
     : QObject(parent)
 {
-    setWhitePlayer(new HumanPlayer(this, White));
-    setBlackPlayer(new HumanPlayer(this, Black));
+    setWhitePlayer(new NegaMaxPlayer(this, White, new SomeHeuristic()));
+    setBlackPlayer(new NegaMaxPlayer(this, Black, new SomeHeuristic()));
 
     connect(this, SIGNAL(playerMoved()), SLOT(startNextTurn()));
 }
@@ -149,7 +150,7 @@ HexdameGame::setWhitePlayer(AbstractPlayer *player)
 void
 HexdameGame::startNextTurn()
 {
-    if (!_grid.gameOver()) {
+    if (_grid.winner() == None) {
         if (_currentColor == White) {
             _currentColor = Black;
         } else {

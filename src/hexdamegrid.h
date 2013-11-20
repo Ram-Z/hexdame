@@ -62,10 +62,10 @@ public:
     // does not check validity and calculates all valid moves, use for debug
     void move(const Coord &from, const Coord &to);
 
-    bool gameOver() const;
+    Color winner() const;
+    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
 
 private:
-    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
     void dfs(const Coord &from, Move move = Move());
 
     void kingPiece(Coord c);

@@ -228,8 +228,7 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
     GraphicsPieceItem *piece = 0;
     foreach (QGraphicsItem * item, items(event->pos())) {
         if (item->type() == PieceItem) {
-            if (selectedPiece != item)
-                piece = qgraphicsitem_cast<GraphicsPieceItem *>(item);
+            piece = qgraphicsitem_cast<GraphicsPieceItem *>(item);
         }
         if (item->type() == HexItem) {
             hex = qgraphicsitem_cast<GraphicsHexItem *>(item);
@@ -250,7 +249,7 @@ HexdameView::mouseReleaseEvent(QMouseEvent *event)
     }
     delete lines;
 
-    if (hex && !piece) {
+    if (hex) {
         Coord oldCoord = hexFrom->coord();
         Coord newCoord = hex->coord();
 
