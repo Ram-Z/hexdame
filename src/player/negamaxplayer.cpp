@@ -32,7 +32,7 @@ NegaMaxPlayer::NegaMaxPlayer(HexdameGame *game, Color color, AbstractHeuristic *
     : AbstractPlayer(AI, game, color)
     , _heuristic(heuristic)
 {
-    qsrand(1);
+    qsrand(QTime::currentTime().second());
 }
 
 void
@@ -51,7 +51,7 @@ NegaMaxPlayer::play()
         foreach (Move mm, m.values()) {
             HexdameGrid child(_game->grid());
             child.makeMove(mm);
-            int val = -negamax(child, 3, -_color);
+            int val = -negamax(child, 4, -INT_MAX, INT_MAX, -_color);
 
             if (bestValue <= val) {
                 if (bestValue < val) {
@@ -69,12 +69,12 @@ NegaMaxPlayer::play()
 }
 
 int
-NegaMaxPlayer::negamax(HexdameGrid node, int depth, int color)
+NegaMaxPlayer::negamax(HexdameGrid node, int depth, int alpha, int beta, int color)
 {
     if (depth == 0 || node.winner() != None) {
         return _heuristic->value(node, color);
     }
-    int bestValue = INT_MIN;
+    int bestValue = alpha;
     node.computeValidMoves((Color)color);
 
     QHash<Coord, QMultiHash<Coord, Move>> moves = node.validMoves();
@@ -83,8 +83,11 @@ NegaMaxPlayer::negamax(HexdameGrid node, int depth, int color)
         foreach (Move mm, m.values()) {
             HexdameGrid child(node);
             child.makeMove(mm);
-            int val = -negamax(child, depth-1, -color);
+            int val = -negamax(child, depth-1, -beta, -alpha, -color);
             bestValue = qMax(bestValue, val);
+            alpha = qMax(alpha, val);
+            if (alpha >= beta)
+                break;
         }
     }
     return bestValue;

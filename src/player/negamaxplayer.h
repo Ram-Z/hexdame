@@ -35,7 +35,7 @@ public:
     virtual void play();
 
 private:
-    int negamax(HexdameGrid node, int depth, int color);
+    int negamax(HexdameGrid node, int depth, int alpha, int beta, int color);
 
     AbstractHeuristic *_heuristic;
 };
