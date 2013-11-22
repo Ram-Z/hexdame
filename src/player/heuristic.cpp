@@ -31,10 +31,10 @@ int SomeHeuristic::value(const HexdameGrid &grid, const int &c) const
     int value = 0;
     foreach (Piece p, grid) {
         if (isPawn(p) && color(p) ==  c) value++;
-        if (isKing(p) && color(p) ==  c) value+=5;
+        if (isKing(p) && color(p) ==  c) value+=3;
 
         if (isPawn(p) && color(p) == -c) value--;
-        if (isKing(p) && color(p) == -c) value-=5;
+        if (isKing(p) && color(p) == -c) value-=3;
 
     }
     return value;
