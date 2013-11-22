@@ -46,6 +46,8 @@ HexdameGrid::HexdameGrid(const HexdameGrid &other)
     : _grid(other._grid)
     , _cntWhite(other._cntWhite)
     , _cntBlack(other._cntBlack)
+    , _validMoves(other._validMoves)
+    , _maxTaken(other._maxTaken)
 {
 
 }
@@ -56,8 +58,8 @@ HexdameGrid &HexdameGrid::operator=(const HexdameGrid &other)
         _grid = other._grid;
         _cntWhite = other._cntWhite;
         _cntBlack = other._cntBlack;
-        _validMoves.clear();
-        _maxTaken = 0;
+        _validMoves = other._validMoves;
+        _maxTaken = other._maxTaken;
     }
     return *this;
 }

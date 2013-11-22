@@ -51,7 +51,7 @@ NegaMaxPlayer::play()
         foreach (Move mm, m.values()) {
             HexdameGrid child(_game->grid());
             child.makeMove(mm);
-            int val = -negamax(child, 4, -INT_MAX, INT_MAX, -_color);
+            int val = -negamax(child, 3, -INT_MAX, INT_MAX, -_color);
 
             if (bestValue <= val) {
                 if (bestValue < val) {
@@ -69,13 +69,12 @@ NegaMaxPlayer::play()
 }
 
 int
-NegaMaxPlayer::negamax(HexdameGrid node, int depth, int alpha, int beta, int color)
+NegaMaxPlayer::negamax(const HexdameGrid &node, int depth, int alpha, int beta, int color)
 {
     if (depth == 0 || node.winner() != None) {
         return _heuristic->value(node, color);
     }
     int bestValue = alpha;
-    node.computeValidMoves((Color)color);
 
     QHash<Coord, QMultiHash<Coord, Move>> moves = node.validMoves();
     QMultiHash<Coord, Move> m;
