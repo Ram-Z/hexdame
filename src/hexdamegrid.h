@@ -66,7 +66,7 @@ public:
     Color winner() const;
     QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
 
-    friend uint qHash(const HexdameGrid &grid) { return grid._zobrist_hash; }
+    quint64 zobristHash() const { return _zobrist_hash; }
 
 private:
     void dfs(const Coord &from, Move move = Move());

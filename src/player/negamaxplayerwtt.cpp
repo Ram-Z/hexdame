@@ -75,9 +75,10 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
     nodeCnt++;
     int alphaOrig = alpha;
 
-    TTentry *ttentry = ttable.object(qHash(node));
+    TTentry *ttentry = ttable.object(node.zobristHash());
     if (ttentry && ttentry->depth >= depth) {
-        if (ttentry->zobrist_key == qHash(node)) {
+        if (ttentry->zobrist_key == node.zobristHash()) {
+            //qDebug() << ttentry->zobrist_key << ttentry->depth << ttentry->value << ttentry->flag;
             if (ttentry->flag == FLAG_EXACT) {
                 return ttentry->value;
             } else if (ttentry->flag == FLAG_LOWER) {
@@ -115,7 +116,7 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
     TTentry *new_ttentry = new TTentry();
     new_ttentry->value = bestValue;
     new_ttentry->move = mm;
-    new_ttentry->zobrist_key = qHash(node);
+    new_ttentry->zobrist_key = node.zobristHash();
     if (bestValue <= alphaOrig) {
         new_ttentry->flag = FLAG_UPPER;
     } else if (bestValue >= beta) {
@@ -124,7 +125,7 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
         new_ttentry->flag = FLAG_EXACT;
     }
     new_ttentry->depth = depth;
-    ttable.insert(qHash(node), new_ttentry);
+    ttable.insert(node.zobristHash(), new_ttentry);
 
     return bestValue;
 }

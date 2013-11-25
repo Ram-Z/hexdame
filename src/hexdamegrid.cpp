@@ -71,7 +71,7 @@ HexdameGrid::HexdameGrid(const HexdameGrid &other)
     , _cntBlack(other._cntBlack)
     , _validMoves(other._validMoves)
     , _maxTaken(other._maxTaken)
-    , _zobrist_hash(_zobrist_hash)
+    , _zobrist_hash(other._zobrist_hash)
 {
 
 }
@@ -301,7 +301,7 @@ HexdameGrid::zobristInit()
 
     _zobrist_hash = 0;
 
-    for (int i = 0; i < coords().size(); ++i) {
+    for (int i = 0; i < 61; ++i) {
         for (int j = 0; j < 4; ++j) {
             _zobrist_idx[i][j] = dis(gen);
         }
