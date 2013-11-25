@@ -54,20 +54,21 @@ inline bool  isKing(const Piece &p) { return qAbs<int>(p) == 2; }
 }
 
 struct Coord {
-    int x, y;
+    qint8 x, y;
 
+    Coord(qint8 x, qint8 y) : x(x), y(y) { }
     bool operator==(const Coord &c) const { return x == c.x && y == c.y; }
     bool operator!=(const Coord &c) const { return !(*this == c); }
 
-    Coord operator+(const Coord &c) const { return Coord {x + c.x, y + c.y}; }
+    Coord operator+(const Coord &c) const { return Coord(x + c.x, y + c.y); }
     Coord &operator+=(const Coord &c) { x += c.x; y += c.y; return *this; }
 
-    Coord operator-(const Coord &c) const { return Coord {x - c.x, y - c.y}; }
+    Coord operator-(const Coord &c) const { return Coord(x - c.x, y - c.y); }
     Coord &operator-=(const Coord &c) { x -= c.x; y -= c.y; return *this; }
 
-    friend Coord operator*(int i, const Coord &c) { return Coord {i * c.x, i * c.y}; }
-    friend Coord operator*(const Coord &c, int i) { return i * c; }
-    Coord &operator*=(int i) { x *= i; y *= i; return *this; }
+    friend Coord operator*(qint8 i, const Coord &c) { return Coord(i * c.x, i * c.y); }
+    friend Coord operator*(const Coord &c, qint8 i) { return i * c; }
+    Coord &operator*=(qint8 i) { x *= i; y *= i; return *this; }
 
     friend QDebug operator<<(QDebug dbg, const Coord &coord);
 

@@ -36,11 +36,11 @@ HexdameGrid::HexdameGrid()
     zobristInit();
 
     quint8 idx = 0;
-    for (int x = 0; x < SIZE; ++x) {
-        for (int y = 0; y < SIZE; ++y) {
+    for (quint8 x = 0; x < SIZE; ++x) {
+        for (quint8 y = 0; y < SIZE; ++y) {
             static const int s = SIZE / 2;
             if (qAbs(x - y) <= s) {
-                _coordToIdx[Coord{x,y}] = idx;
+                _coordToIdx[Coord(x,y)] = idx;
                 if (x < s && y < s) {
                     _whitePawns |= 1 << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][2];
@@ -245,7 +245,7 @@ HexdameGrid::computeValidMoves(Color col)
         _validMoves.reserve(2*_cntBlack);
 
     // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
-    const static QList<Coord> l{Coord{1,0}, Coord{0,1}, Coord{1,1}, Coord{0,-1}, Coord{-1,0}, Coord{-1,-1}};
+    const static QList<Coord> l{Coord(1,0), Coord(0,1), Coord(1,1), Coord(0,-1), Coord(-1,0), Coord(-1,-1)};
     foreach(Coord from, coords()) {
         if (color(from) != col) continue;
         for (int i = 0; i < l.size(); ++i) {
@@ -282,7 +282,7 @@ HexdameGrid::dfs(const Coord &from, Move move)
         king = isKing(from);
     }
 
-    const static QList<Coord> l{Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1}, Coord{1,1}, Coord{-1,-1}};
+    const static QList<Coord> l{Coord(1,0), Coord(-1,0), Coord(0,1), Coord(0,-1), Coord(1,1), Coord(-1,-1)};
     foreach (Coord lv, l) {
         for (int i = 1; i < 9; ++i) {
             Coord over = from + i*lv;
