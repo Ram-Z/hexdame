@@ -90,18 +90,19 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
             if (alpha >= beta) {
                 return ttentry->value;
             }
+        } else {
+            qDebug() << "COLLISION";
         }
     }
     if (depth == 0 || node.winner() != None) {
         return _heuristic->value(node, color);
     }
 
-    int bestValue = alpha;
+    int bestValue = INT_MIN;
 
     QHash<Coord, QMultiHash<Coord, Move>> moves = node.validMoves();
-    QMultiHash<Coord, Move> m;
     Move mm;
-    foreach (m, moves.values()) {
+    foreach (auto m, moves.values()) {
         foreach (mm, m.values()) {
             HexdameGrid child(node);
             child.makeMove(mm);

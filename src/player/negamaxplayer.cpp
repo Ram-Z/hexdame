@@ -75,7 +75,7 @@ NegaMaxPlayer::negamax(const HexdameGrid &node, int depth, int alpha, int beta, 
     if (depth == 0 || node.winner() != None) {
         return _heuristic->value(node, color);
     }
-    int bestValue = alpha;
+    int bestValue = INT_MIN;
 
     QHash<Coord, QMultiHash<Coord, Move>> moves = node.validMoves();
     QMultiHash<Coord, Move> m;
