@@ -46,11 +46,11 @@ HexdameGame::debugRightClick(Coord c)
     if (!debug()) return;
 
     switch (_grid.at(c)) {
-        case BlackKing: _grid[c] = BlackPawn; break;
-        case BlackPawn: _grid[c] = Empty    ; break;
-        case Empty:     _grid[c] = WhitePawn; break;
-        case WhitePawn: _grid[c] = WhiteKing; break;
-        case WhiteKing: _grid[c] = BlackKing; break;
+        case BlackKing: _grid.set(c, BlackPawn); break;
+        case BlackPawn: _grid.set(c, Empty    ); break;
+        case Empty:     _grid.set(c, WhitePawn); break;
+        case WhitePawn: _grid.set(c, WhiteKing); break;
+        case WhiteKing: _grid.set(c, BlackKing); break;
     }
     // this will compute all moves
     setDebugMode(true);

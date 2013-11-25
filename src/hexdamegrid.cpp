@@ -29,8 +29,6 @@ quint64 HexdameGrid::_zobrist_idx[61][4];
 
 HexdameGrid::HexdameGrid()
 {
-    _grid.reserve(91);
-    _grid.resize(61);
     _coordToIdx.reserve(67);
 
     static const int SIZE = 9;
@@ -44,29 +42,29 @@ HexdameGrid::HexdameGrid()
             if (qAbs(x - y) <= s) {
                 _coordToIdx[Coord{x,y}] = idx;
                 if (x < s && y < s) {
-                    _grid[idx] = WhitePawn;
+                    _whitePawns |= 1 << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][2];
                     _cntWhite++;
                 } else if (x > s && y > s) {
-                    _grid[idx] = BlackPawn;
+                    _blackPawns |= (quint64) 1 << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][1];
                     _cntBlack++;
-                } else {
-                    _grid[idx] = Empty;
                 }
                 idx++;
             }
         }
     }
 
-    _grid.squeeze();
     _coordToIdx.squeeze();
 
     computeValidMoves(White);
 }
 
 HexdameGrid::HexdameGrid(const HexdameGrid &other)
-    : _grid(other._grid)
+    : _whitePawns(other._whitePawns)
+    , _whiteKings(other._whiteKings)
+    , _blackPawns(other._blackPawns)
+    , _blackKings(other._blackKings)
     , _cntWhite(other._cntWhite)
     , _cntBlack(other._cntBlack)
     , _validMoves(other._validMoves)
@@ -80,7 +78,10 @@ HexdameGrid &
 HexdameGrid::operator=(const HexdameGrid &other)
 {
     if (this != &other) {
-        _grid = other._grid;
+        _whitePawns = other._whitePawns;
+        _whiteKings = other._whiteKings;
+        _blackPawns = other._blackPawns;
+        _blackKings = other._blackKings;
         _cntWhite = other._cntWhite;
         _cntBlack = other._cntBlack;
         _validMoves = other._validMoves;
@@ -93,7 +94,40 @@ HexdameGrid::operator=(const HexdameGrid &other)
 bool
 HexdameGrid::operator==(const HexdameGrid &other) const
 {
-    return _grid == other._grid;
+    return _whitePawns == other._whitePawns
+        && _blackPawns == other._blackPawns
+        && _whiteKings == other._whiteKings
+        && _blackKings == other._blackKings;
+}
+
+Piece
+HexdameGrid::at(const Coord& c) const
+{
+    quint64 mask = (quint64) 1 << _coordToIdx.value(c);
+
+    if (_whitePawns & mask) return WhitePawn;
+    if (_blackPawns & mask) return BlackPawn;
+    if (_whiteKings & mask) return WhiteKing;
+    if (_blackKings & mask) return BlackKing;
+    return Empty;
+}
+
+void
+HexdameGrid::set(const Coord& c, Piece p)
+{
+    quint64 mask = (quint64) 1 << _coordToIdx.value(c);
+
+    _whitePawns &= ~mask;
+    _blackPawns &= ~mask;
+    _whiteKings &= ~mask;
+    _blackKings &= ~mask;
+
+    switch (p) {
+        case WhitePawn: _whitePawns |= mask; break;
+        case BlackPawn: _blackPawns |= mask; break;
+        case WhiteKing: _whiteKings |= mask; break;
+        case BlackKing: _blackKings |= mask; break;
+    }
 }
 
 Color
@@ -115,7 +149,7 @@ HexdameGrid::kingPiece(Coord c)
 
     if (color(c) == White) {
         if (c.x == 8 || c.y == 8) {
-            (*this)[c] = WhiteKing;
+            set(c, WhiteKing);
             _zobrist_hash ^= zobristString(c, WhitePawn);
             _zobrist_hash ^= zobristString(c, WhiteKing);
             return;
@@ -124,7 +158,7 @@ HexdameGrid::kingPiece(Coord c)
 
     if (color(c) == Black) {
         if (c.x == 0 || c.y == 0) {
-            (*this)[c] = BlackKing;
+            set(c, BlackKing);
             _zobrist_hash ^= zobristString(c, BlackPawn);
             _zobrist_hash ^= zobristString(c, BlackKing);
             return;
@@ -139,8 +173,8 @@ HexdameGrid::makeMove(const Move &move, bool partial)
         _zobrist_hash ^= zobristString(move.to(), at(move.from()));
         _zobrist_hash ^= zobristString(move.from(), at(move.from()));
 
-        (*this)[move.to()] = at(move.from());
-        (*this)[move.from()] = Empty;
+        set(move.to(), at(move.from()));
+        set(move.from(), Empty);
     }
 
     foreach (Coord c, move.taken) {
@@ -150,7 +184,7 @@ HexdameGrid::makeMove(const Move &move, bool partial)
             _cntWhite--;
         }
         _zobrist_hash ^= zobristString(c, at(c));
-        (*this)[c] = Empty;
+        set(c, Empty);
     }
 
     if (partial) {
@@ -176,8 +210,8 @@ HexdameGrid::move(const Coord &from, const Coord &to)
     _zobrist_hash ^= zobristString(to, at(from));
     _zobrist_hash ^= zobristString(from, at(from));
 
-    (*this)[to] = at(from);
-    (*this)[from] = Empty;
+    set(to, at(from));
+    set(from, Empty);
 
     computeValidMoves(None);
 }

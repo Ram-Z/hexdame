@@ -34,16 +34,8 @@ public:
     HexdameGrid &operator=(const HexdameGrid &other);
     bool operator==(const HexdameGrid &other) const;
 
-
-    const Piece at(const Coord &c) const { return _grid[_coordToIdx.value(c,-1)]; }
-    const Piece operator[](const Coord &c) const { return at(c); }
-    Piece &rat(const Coord &c) { return _grid[_coordToIdx.value(c)]; }
-    Piece &operator[](const Coord &c) { return rat(c); }
-
-    // allow foreach
-    typedef QVector<Piece>::const_iterator const_iterator ;
-    const const_iterator begin() const { return _grid.begin(); }
-    const const_iterator   end() const { return _grid.end(); }
+    Piece at(const Coord &c) const;
+    void set(const Coord &c, Piece p);
 
     QList<Coord> coords() const { return _coordToIdx.keys(); }
     bool contains(const Coord &c) const { return _coordToIdx.contains(c); }
@@ -52,12 +44,18 @@ public:
     const QMultiHash<Coord, Move> validMoves(Coord c) const { return _validMoves.value(c); }
 
     // convenience functions
-    inline bool isWhite(const Coord &c) const { return Hexdame::isWhite(at(c)); }
-    inline bool isBlack(const Coord &c) const { return Hexdame::isBlack(at(c)); }
-    inline bool isEmpty(const Coord &c) const { return Hexdame::isEmpty(at(c)); }
-    inline bool  isPawn(const Coord &c) const { return Hexdame::isPawn(at(c)); }
-    inline bool  isKing(const Coord &c) const { return Hexdame::isKing(at(c)); }
-    inline Color  color(const Coord &c) const { return Hexdame::color(at(c)); }
+    inline bool isWhite(const Coord &c) const
+        { return (_whitePawns | _whiteKings) & ((quint64) 1 << _coordToIdx[c]); }
+    inline bool isBlack(const Coord &c) const
+        { return (_blackPawns | _blackKings) & ((quint64) 1 << _coordToIdx[c]); }
+    inline bool isEmpty(const Coord &c) const
+        { return !((_whitePawns | _whiteKings | _blackPawns | _blackKings) & ((quint64) 1 << _coordToIdx[c])); }
+    inline bool  isPawn(const Coord &c) const
+        { return (_whitePawns | _blackPawns) & ((quint64) 1 << _coordToIdx[c]); }
+    inline bool  isKing(const Coord &c) const
+        { return (_whiteKings | _blackKings) & ((quint64) 1 << _coordToIdx[c]); }
+    inline Color  color(const Coord &c) const
+        { return Hexdame::color(at(c)); }
 
     void makeMove(const Move &move, bool partial = false);
     // does not check validity and calculates all valid moves, use for debug
@@ -78,13 +76,17 @@ private:
     quint64 _zobrist_hash;
 
     static QHash<Coord, quint8> _coordToIdx;
-    QVector<Piece> _grid;
+
+    quint64 _whitePawns = 0;
+    quint64 _whiteKings = 0;
+    quint64 _blackPawns = 0;
+    quint64 _blackKings = 0;
 
     QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
-    mutable int _maxTaken;
+    quint8 _maxTaken;
 
-    int _cntWhite = 0;
-    int _cntBlack = 0;
+    quint8 _cntWhite = 0;
+    quint8 _cntBlack = 0;
 };
 
 #endif // HEXDAMEGRID_H
