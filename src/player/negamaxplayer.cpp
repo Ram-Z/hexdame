@@ -43,7 +43,6 @@ NegaMaxPlayer::play()
     while (QTime::currentTime() < wait)
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 
-    int v = _heuristic->value(_game->grid(), _color);
     int bestValue = INT_MIN;
     QList<Move> bestMoves;
     QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
@@ -51,7 +50,7 @@ NegaMaxPlayer::play()
         foreach (Move mm, m.values()) {
             HexdameGrid child(_game->grid());
             child.makeMove(mm);
-            int val = -negamax(child, 3, -INT_MAX, INT_MAX, -_color);
+            int val = -negamax(child, 4, -INT_MAX, INT_MAX, -_color);
 
             if (bestValue <= val) {
                 if (bestValue < val) {
@@ -62,8 +61,6 @@ NegaMaxPlayer::play()
             }
         }
     }
-    foreach (Move m, bestMoves)
-        qDebug() << bestValue << m.path;
 
     emit move(bestMoves.at(qrand() % bestMoves.size()));
 }

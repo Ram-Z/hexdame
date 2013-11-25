@@ -19,25 +19,47 @@
 
 #include "hexdamegrid.h"
 
+#include <limits>
+#include <random>
+
+#include <QtDebug>
+
+QHash<Coord, quint8> HexdameGrid::_coordToIdx;
+quint64 HexdameGrid::_zobrist_idx[61][4];
+
 HexdameGrid::HexdameGrid()
 {
-    _grid.reserve(SIZE * SIZE);
+    _grid.reserve(91);
+    _grid.resize(61);
+    _coordToIdx.reserve(67);
 
+    static const int SIZE = 9;
+
+    quint8 idx = 0;
     for (int x = 0; x < SIZE; ++x) {
         for (int y = 0; y < SIZE; ++y) {
-            int s = SIZE / 2;
+            static const int s = SIZE / 2;
             if (qAbs(x - y) <= s) {
-                _grid[Coord {x, y}] = Empty;
-            }
-            if (x < s && y < s) {
-                _grid[Coord {x, y}] = WhitePawn;
-                _cntWhite++;
-            } else if (x > s && y > s) {
-                _grid[Coord {x, y}] = BlackPawn;
-                _cntBlack++;
+                _coordToIdx[Coord{x,y}] = idx;
+                if (x < s && y < s) {
+                    _grid[idx] = WhitePawn;
+                    _cntWhite++;
+                } else if (x > s && y > s) {
+                    _grid[idx] = BlackPawn;
+                    _cntBlack++;
+                } else {
+                    _grid[idx] = Empty;
+                }
+                qDebug() << idx << Coord{x,y} << _grid[idx];
+                idx++;
             }
         }
     }
+
+    _grid.squeeze();
+    _coordToIdx.squeeze();
+
+    zobristInit();
 
     computeValidMoves(White);
 }
@@ -48,11 +70,13 @@ HexdameGrid::HexdameGrid(const HexdameGrid &other)
     , _cntBlack(other._cntBlack)
     , _validMoves(other._validMoves)
     , _maxTaken(other._maxTaken)
+    , _zobrist_hash(_zobrist_hash)
 {
 
 }
 
-HexdameGrid &HexdameGrid::operator=(const HexdameGrid &other)
+HexdameGrid &
+HexdameGrid::operator=(const HexdameGrid &other)
 {
     if (this != &other) {
         _grid = other._grid;
@@ -60,6 +84,7 @@ HexdameGrid &HexdameGrid::operator=(const HexdameGrid &other)
         _cntBlack = other._cntBlack;
         _validMoves = other._validMoves;
         _maxTaken = other._maxTaken;
+        _zobrist_hash = other._zobrist_hash;
     }
     return *this;
 }
@@ -89,14 +114,18 @@ HexdameGrid::kingPiece(Coord c)
 
     if (color(c) == White) {
         if (c.x == 8 || c.y == 8) {
-            _grid[c] = WhiteKing;
+            (*this)[c] = WhiteKing;
+            _zobrist_hash ^= zobristString(c, WhitePawn);
+            _zobrist_hash ^= zobristString(c, WhiteKing);
             return;
         }
     }
 
     if (color(c) == Black) {
         if (c.x == 0 || c.y == 0) {
-            _grid[c] = BlackKing;
+            (*this)[c] = BlackKing;
+            _zobrist_hash ^= zobristString(c, BlackPawn);
+            _zobrist_hash ^= zobristString(c, BlackKing);
             return;
         }
     }
@@ -105,8 +134,13 @@ HexdameGrid::kingPiece(Coord c)
 void
 HexdameGrid::makeMove(const Move &move, bool partial)
 {
-    _grid[move.to()] = at(move.from());
-    _grid[move.from()] = Empty;
+    if (move.from() != move.to()) {
+        _zobrist_hash ^= zobristString(move.to(), at(move.from()));
+        _zobrist_hash ^= zobristString(move.from(), at(move.from()));
+
+        (*this)[move.to()] = at(move.from());
+        (*this)[move.from()] = Empty;
+    }
 
     foreach (Coord c, move.taken) {
         if (color(c) == Black) {
@@ -114,7 +148,11 @@ HexdameGrid::makeMove(const Move &move, bool partial)
         } else if (color(c) == White) {
             _cntWhite--;
         }
-        _grid[c] = Empty;
+        qDebug() << move.path;
+        qDebug() << move.taken;
+        Q_ASSERT(!isEmpty(c));
+        _zobrist_hash ^= zobristString(c, at(c));
+        (*this)[c] = Empty;
     }
 
     if (partial) {
@@ -137,8 +175,11 @@ HexdameGrid::move(const Coord &from, const Coord &to)
 
     if (to == from) return;
 
-    _grid[to] = _grid.value(from);
-    _grid[from] = Empty;
+    _zobrist_hash ^= zobristString(to, at(from));
+    _zobrist_hash ^= zobristString(from, at(from));
+
+    (*this)[to] = at(from);
+    (*this)[from] = Empty;
 
     computeValidMoves(None);
 }
@@ -182,7 +223,7 @@ HexdameGrid::computeValidMoves(Color col)
             for (int j = 1; j < 9; ++j) {
                 Coord to = from + j*l.at(i);
 
-                if (!_grid.contains(to)) break;
+                if (!contains(to)) break;
                 if (!isEmpty(to)) break;
 
                 // create Move and add to list
@@ -214,7 +255,7 @@ HexdameGrid::dfs(const Coord &from, Move move)
         for (int i = 1; i < 9; ++i) {
             Coord over = from + i*lv;
 
-            if (!_grid.contains(over)) break;     // not on the grid
+            if (!contains(over)) break;           // not on the grid
             if (col == color(over)) break;        // same colour
             if (move.taken.contains(over)) break; // already took piece
 
@@ -222,7 +263,7 @@ HexdameGrid::dfs(const Coord &from, Move move)
                 while (++i < 9) {
                     Coord to = from + i*lv;
                     // non-empty cell after jumping
-                    if (!_grid.contains(to) || (move.from() != to && !isEmpty(to))) { i = 9; break; }
+                    if (!contains(to) || (move.from() != to && !isEmpty(to))) { i = 9; break; }
 
                     // create a new Move
                     Move newMove(move);
@@ -251,4 +292,48 @@ HexdameGrid::dfs(const Coord &from, Move move)
             if (!king) break; // Pawns can't jump further than 1
         }
     }
+}
+
+void
+HexdameGrid::zobristInit()
+{
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<quint64> dis(std::numeric_limits<quint64>::min(), std::numeric_limits<quint64>::max());
+
+    for (int i = 0; i < coords().size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            _zobrist_idx[i][j] = dis(gen);
+        }
+    }
+
+    _zobrist_hash = 0;
+    for (int i = 0; i < coords().size() ; ++i) {
+        if (_grid[i] != Empty) {
+            int j;
+            switch (_grid[i]) {
+                case BlackKing: j = 0; break;
+                case BlackPawn: j = 1; break;
+                case WhitePawn: j = 2; break;
+                case WhiteKing: j = 3; break;
+            }
+            _zobrist_hash ^= _zobrist_idx[i][j];
+        }
+    }
+}
+
+quint64
+HexdameGrid::zobristString(const Coord& c, const Piece& p)
+{
+    int i = _coordToIdx.value(c);
+    int j;
+
+    switch (p) {
+        case BlackKing: j = 0; break;
+        case BlackPawn: j = 1; break;
+        case WhitePawn: j = 2; break;
+        case WhiteKing: j = 3; break;
+    }
+
+    return _zobrist_idx[i][j];
 }

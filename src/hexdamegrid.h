@@ -22,7 +22,7 @@
 
 #include "commondefs.h"
 
-#include <QtDebug> // needed for Q_ASSERT
+#include <QVector>
 
 using namespace Hexdame;
 
@@ -34,18 +34,19 @@ public:
     HexdameGrid &operator=(const HexdameGrid &other);
     bool operator==(const HexdameGrid &other);
 
-    static const int SIZE = 9;
 
-    const Piece at(const Coord &c) const { Q_ASSERT(_grid.contains(c)); return _grid.value(c); }
-    Piece &operator[](const Coord &c) { return _grid[c]; }
+    const Piece at(const Coord &c) const { return _grid[_coordToIdx.value(c,-1)]; }
     const Piece operator[](const Coord &c) const { return at(c); }
+    Piece &rat(const Coord &c) { return _grid[_coordToIdx.value(c)]; }
+    Piece &operator[](const Coord &c) { return rat(c); }
 
     // allow foreach
-    typedef QHash<Coord, Piece>::const_iterator const_iterator ;
+    typedef QVector<Piece>::const_iterator const_iterator ;
     const const_iterator begin() const { return _grid.begin(); }
     const const_iterator   end() const { return _grid.end(); }
 
-    QList<Coord> coords() const { return _grid.keys(); }
+    QList<Coord> coords() const { return _coordToIdx.keys(); }
+    bool contains(const Coord &c) const { return _coordToIdx.contains(c); }
 
     const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
     const QMultiHash<Coord, Move> validMoves(Coord c) const { return _validMoves.value(c); }
@@ -65,12 +66,19 @@ public:
     Color winner() const;
     QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
 
+    friend uint qHash(const HexdameGrid &grid) { return grid._zobrist_hash; }
+
 private:
     void dfs(const Coord &from, Move move = Move());
-
     void kingPiece(Coord c);
 
-    QHash<Coord, Piece> _grid;
+    void zobristInit();
+    static quint64 zobristString(const Coord &c, const Piece &p);
+    static quint64 _zobrist_idx[61][4];
+    quint64 _zobrist_hash;
+
+    static QHash<Coord, quint8> _coordToIdx;
+    QVector<Piece> _grid;
 
     QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
     mutable int _maxTaken;

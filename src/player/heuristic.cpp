@@ -25,16 +25,21 @@ using namespace Hexdame;
 
 int SomeHeuristic::value(const HexdameGrid &grid, const int &c) const
 {
-    if (grid.winner() ==  c) return  100;
-    if (grid.winner() == -c) return -100;
+    if (grid.winner() ==  c) return  1000;
+    if (grid.winner() == -c) return -1000;
 
     int value = 0;
-    foreach (Piece p, grid) {
-        if (isPawn(p) && color(p) ==  c) value++;
-        if (isKing(p) && color(p) ==  c) value+=3;
+    foreach (Coord coord, grid.coords()) {
+        Piece p = grid.at(coord);
 
-        if (isPawn(p) && color(p) == -c) value--;
-        if (isKing(p) && color(p) == -c) value-=3;
+        if (isPawn(p) && color(p) ==  c) value+=10;
+        if (isKing(p) && color(p) ==  c) value+=30;
+
+        if (isPawn(p) && color(p) == -c) value-=10;
+        if (isKing(p) && color(p) == -c) value-=30;
+
+        if (isPawn(p) && color(p) ==  c) value += qAbs(coord.x - coord.y)/2;
+        if (isPawn(p) && color(p) == -c) value -= qAbs(coord.x - coord.y)/2;
 
     }
     return value;
