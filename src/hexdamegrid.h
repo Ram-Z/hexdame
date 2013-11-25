@@ -32,7 +32,7 @@ public:
     HexdameGrid();
     HexdameGrid(const HexdameGrid &other);
     HexdameGrid &operator=(const HexdameGrid &other);
-    bool operator==(const HexdameGrid &other);
+    bool operator==(const HexdameGrid &other) const;
 
 
     const Piece at(const Coord &c) const { return _grid[_coordToIdx.value(c,-1)]; }

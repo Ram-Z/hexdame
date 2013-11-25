@@ -17,7 +17,7 @@
  *
  */
 
-#include "negamaxplayer.h"
+#include "negamaxplayerwtt.h"
 
 #include "heuristic.h"
 #include "hexdamegame.h"
@@ -28,15 +28,16 @@
 
 #include <QtDebug>
 
-NegaMaxPlayer::NegaMaxPlayer(HexdameGame *game, Color color, AbstractHeuristic *heuristic)
+NegaMaxPlayerWTt::NegaMaxPlayerWTt(HexdameGame *game, Color color, AbstractHeuristic *heuristic)
     : AbstractPlayer(AI, game, color)
     , _heuristic(heuristic)
 {
     qsrand(QTime::currentTime().second());
+    ttable.setMaxCost(50000);
 }
 
 void
-NegaMaxPlayer::play()
+NegaMaxPlayerWTt::play()
 {
     // wait a bit before next move
     QTime wait = QTime::currentTime().addMSecs(10);
@@ -52,7 +53,7 @@ NegaMaxPlayer::play()
             nodeCnt++;
             HexdameGrid child(_game->grid());
             child.makeMove(mm);
-            int val = -negamax(child, 4, -INT_MAX, INT_MAX, -_color);
+            int val = -negamax(child, 7, -INT_MAX, INT_MAX, -_color);
 
             if (bestValue <= val) {
                 if (bestValue < val) {
@@ -69,18 +70,38 @@ NegaMaxPlayer::play()
 }
 
 int
-NegaMaxPlayer::negamax(const HexdameGrid &node, int depth, int alpha, int beta, int color)
+NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int beta, int color)
 {
     nodeCnt++;
+    int alphaOrig = alpha;
+
+    TTentry *ttentry = ttable.object(qHash(node));
+    if (ttentry && ttentry->depth >= depth) {
+        if (ttentry->zobrist_key == qHash(node)) {
+            if (ttentry->flag == FLAG_EXACT) {
+                return ttentry->value;
+            } else if (ttentry->flag == FLAG_LOWER) {
+                alpha = qMax<int>(alpha, ttentry->value);
+            } else if (ttentry->flag == FLAG_UPPER) {
+                beta = qMin<int>(beta, ttentry->value);
+            }
+
+            if (alpha >= beta) {
+                return ttentry->value;
+            }
+        }
+    }
     if (depth == 0 || node.winner() != None) {
         return _heuristic->value(node, color);
     }
+
     int bestValue = alpha;
 
     QHash<Coord, QMultiHash<Coord, Move>> moves = node.validMoves();
     QMultiHash<Coord, Move> m;
+    Move mm;
     foreach (m, moves.values()) {
-        foreach (Move mm, m.values()) {
+        foreach (mm, m.values()) {
             HexdameGrid child(node);
             child.makeMove(mm);
             int val = -negamax(child, depth-1, -beta, -alpha, -color);
@@ -90,5 +111,20 @@ NegaMaxPlayer::negamax(const HexdameGrid &node, int depth, int alpha, int beta, 
         }
         if (alpha >= beta) break;
     }
+
+    TTentry *new_ttentry = new TTentry();
+    new_ttentry->value = bestValue;
+    new_ttentry->move = mm;
+    new_ttentry->zobrist_key = qHash(node);
+    if (bestValue <= alphaOrig) {
+        new_ttentry->flag = FLAG_UPPER;
+    } else if (bestValue >= beta) {
+        new_ttentry->flag = FLAG_LOWER;
+    } else {
+        new_ttentry->flag = FLAG_EXACT;
+    }
+    new_ttentry->depth = depth;
+    ttable.insert(qHash(node), new_ttentry);
+
     return bestValue;
 }

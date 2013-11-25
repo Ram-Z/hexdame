@@ -17,28 +17,42 @@
  *
  */
 
-#ifndef NEGAMAX_H
-#define NEGAMAX_H
+#ifndef NEGAMAXPLAYERWTT_H
+#define NEGAMAXPLAYERWTT_H
+
+#define FLAG_EXACT 0
+#define FLAG_LOWER 1
+#define FLAG_UPPER 2
 
 #include "player/abstractplayer.h"
+#include <QCache>
 
 class HexdameGrid;
 class AbstractHeuristic;
 
-class NegaMaxPlayer : public AbstractPlayer
+class NegaMaxPlayerWTt : public AbstractPlayer
 {
     Q_OBJECT
 
 public:
-    NegaMaxPlayer(HexdameGame *game, Color color, AbstractHeuristic *heuristic);
+    NegaMaxPlayerWTt(HexdameGame *game, Color color, AbstractHeuristic *heuristic);
 
     virtual void play();
 
 private:
     int negamax(const HexdameGrid& node, int depth, int alpha, int beta, int color);
-    int nodeCnt = 0;
+
+    struct TTentry {
+        quint64 zobrist_key;
+        quint8 depth;
+        quint8 flag;
+        qint16 value;
+        Move move;
+    };
+    QCache<quint64, TTentry> ttable;
 
     AbstractHeuristic *_heuristic;
+    int nodeCnt;
 };
 
-#endif // NEGAMAX_H
+#endif // NEGAMAXPLAYERWTT_H

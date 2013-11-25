@@ -35,6 +35,8 @@ HexdameGrid::HexdameGrid()
 
     static const int SIZE = 9;
 
+    zobristInit();
+
     quint8 idx = 0;
     for (int x = 0; x < SIZE; ++x) {
         for (int y = 0; y < SIZE; ++y) {
@@ -43,14 +45,15 @@ HexdameGrid::HexdameGrid()
                 _coordToIdx[Coord{x,y}] = idx;
                 if (x < s && y < s) {
                     _grid[idx] = WhitePawn;
+                    _zobrist_hash ^= _zobrist_idx[idx][2];
                     _cntWhite++;
                 } else if (x > s && y > s) {
                     _grid[idx] = BlackPawn;
+                    _zobrist_hash ^= _zobrist_idx[idx][1];
                     _cntBlack++;
                 } else {
                     _grid[idx] = Empty;
                 }
-                qDebug() << idx << Coord{x,y} << _grid[idx];
                 idx++;
             }
         }
@@ -58,8 +61,6 @@ HexdameGrid::HexdameGrid()
 
     _grid.squeeze();
     _coordToIdx.squeeze();
-
-    zobristInit();
 
     computeValidMoves(White);
 }
@@ -90,7 +91,7 @@ HexdameGrid::operator=(const HexdameGrid &other)
 }
 
 bool
-HexdameGrid::operator==(const HexdameGrid &other)
+HexdameGrid::operator==(const HexdameGrid &other) const
 {
     return _grid == other._grid;
 }
@@ -148,9 +149,6 @@ HexdameGrid::makeMove(const Move &move, bool partial)
         } else if (color(c) == White) {
             _cntWhite--;
         }
-        qDebug() << move.path;
-        qDebug() << move.taken;
-        Q_ASSERT(!isEmpty(c));
         _zobrist_hash ^= zobristString(c, at(c));
         (*this)[c] = Empty;
     }
@@ -301,25 +299,14 @@ HexdameGrid::zobristInit()
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<quint64> dis(std::numeric_limits<quint64>::min(), std::numeric_limits<quint64>::max());
 
+    _zobrist_hash = 0;
+
     for (int i = 0; i < coords().size(); ++i) {
         for (int j = 0; j < 4; ++j) {
             _zobrist_idx[i][j] = dis(gen);
         }
     }
 
-    _zobrist_hash = 0;
-    for (int i = 0; i < coords().size() ; ++i) {
-        if (_grid[i] != Empty) {
-            int j;
-            switch (_grid[i]) {
-                case BlackKing: j = 0; break;
-                case BlackPawn: j = 1; break;
-                case WhitePawn: j = 2; break;
-                case WhiteKing: j = 3; break;
-            }
-            _zobrist_hash ^= _zobrist_idx[i][j];
-        }
-    }
 }
 
 quint64

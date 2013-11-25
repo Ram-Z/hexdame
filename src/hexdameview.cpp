@@ -183,7 +183,6 @@ HexdameView::mousePressEvent(QMouseEvent *event)
                 newMove.path.removeLast();
                 newMove.taken.removeLast();
             }
-            qDebug() << newMove.path;
             partDests << newMove.to();
             moves.insert(newMove.to(), newMove);
         }
