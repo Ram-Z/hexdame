@@ -45,15 +45,15 @@ public:
 
     // convenience functions
     inline bool isWhite(const Coord &c) const
-        { return (_whitePawns | _whiteKings) & ((quint64) 1 << _coordToIdx[c]); }
+        { return (_whitePawns | _whiteKings) & (1ULL << _coordToIdx[c]); }
     inline bool isBlack(const Coord &c) const
-        { return (_blackPawns | _blackKings) & ((quint64) 1 << _coordToIdx[c]); }
+        { return (_blackPawns | _blackKings) & (1ULL << _coordToIdx[c]); }
     inline bool isEmpty(const Coord &c) const
-        { return !((_whitePawns | _whiteKings | _blackPawns | _blackKings) & ((quint64) 1 << _coordToIdx[c])); }
+        { return !((_whitePawns | _whiteKings | _blackPawns | _blackKings) & (1ULL << _coordToIdx[c])); }
     inline bool  isPawn(const Coord &c) const
-        { return (_whitePawns | _blackPawns) & ((quint64) 1 << _coordToIdx[c]); }
+        { return (_whitePawns | _blackPawns) & (1ULL << _coordToIdx[c]); }
     inline bool  isKing(const Coord &c) const
-        { return (_whiteKings | _blackKings) & ((quint64) 1 << _coordToIdx[c]); }
+        { return (_whiteKings | _blackKings) & (1ULL << _coordToIdx[c]); }
     inline Color  color(const Coord &c) const
         { return Hexdame::color(at(c)); }
 

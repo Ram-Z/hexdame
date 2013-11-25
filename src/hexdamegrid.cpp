@@ -42,11 +42,11 @@ HexdameGrid::HexdameGrid()
             if (qAbs(x - y) <= s) {
                 _coordToIdx[Coord(x,y)] = idx;
                 if (x < s && y < s) {
-                    _whitePawns |= 1 << idx;
+                    _whitePawns |= 1ULL << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][2];
                     _cntWhite++;
                 } else if (x > s && y > s) {
-                    _blackPawns |= (quint64) 1 << idx;
+                    _blackPawns |= 1ULL << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][1];
                     _cntBlack++;
                 }
@@ -103,7 +103,7 @@ HexdameGrid::operator==(const HexdameGrid &other) const
 Piece
 HexdameGrid::at(const Coord& c) const
 {
-    quint64 mask = (quint64) 1 << _coordToIdx.value(c);
+    quint64 mask = 1ULL << _coordToIdx.value(c);
 
     if (_whitePawns & mask) return WhitePawn;
     if (_blackPawns & mask) return BlackPawn;
@@ -115,7 +115,7 @@ HexdameGrid::at(const Coord& c) const
 void
 HexdameGrid::set(const Coord& c, Piece p)
 {
-    quint64 mask = (quint64) 1 << _coordToIdx.value(c);
+    quint64 mask = 1ULL << _coordToIdx.value(c);
 
     _whitePawns &= ~mask;
     _blackPawns &= ~mask;
