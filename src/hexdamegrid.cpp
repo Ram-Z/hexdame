@@ -26,6 +26,7 @@
 
 QHash<Coord, quint8> HexdameGrid::_coordToIdx;
 quint64 HexdameGrid::_zobrist_idx[61][4];
+quint64 HexdameGrid::_zobrist_turn;
 
 HexdameGrid::HexdameGrid()
 {
@@ -193,6 +194,7 @@ HexdameGrid::makeMove(const Move &move, bool partial)
         dfs(move.to());
     } else {
         kingPiece(move.to());
+        _zobrist_hash ^= _zobrist_turn;
         if (color(move.to()) == White)
             computeValidMoves(Black);
         if (color(move.to()) == Black)
@@ -341,6 +343,7 @@ HexdameGrid::zobristInit()
         }
     }
 
+    _zobrist_turn = dis(gen);
 }
 
 quint64

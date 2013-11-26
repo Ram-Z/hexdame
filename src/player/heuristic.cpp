@@ -38,8 +38,8 @@ int SomeHeuristic::value(const HexdameGrid &grid, const int &c) const
         if (isPawn(p) && color(p) == -c) value-=10;
         if (isKing(p) && color(p) == -c) value-=30;
 
-        if (isPawn(p) && color(p) ==  c) value += qAbs(coord.x - coord.y)/2;
-        if (isPawn(p) && color(p) == -c) value -= qAbs(coord.x - coord.y)/2;
+//        if (isPawn(p) && color(p) ==  c) value += qAbs(coord.x - coord.y)/2;
+//        if (isPawn(p) && color(p) == -c) value -= qAbs(coord.x - coord.y)/2;
 
     }
     return value;

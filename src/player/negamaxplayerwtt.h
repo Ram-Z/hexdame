@@ -42,6 +42,7 @@ public:
 private:
     int negamax(const HexdameGrid& node, int depth, int alpha, int beta, int color);
 
+    // apparently it's 32 byte big
     struct TTentry {
         quint64 zobrist_key;
         quint8 depth;

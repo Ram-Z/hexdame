@@ -33,7 +33,7 @@ NegaMaxPlayerWTt::NegaMaxPlayerWTt(HexdameGame *game, Color color, AbstractHeuri
     , _heuristic(heuristic)
 {
     qsrand(QTime::currentTime().second());
-    ttable.setMaxCost(50000);
+    ttable.setMaxCost(50000000);
 }
 
 void
@@ -53,7 +53,7 @@ NegaMaxPlayerWTt::play()
             nodeCnt++;
             HexdameGrid child(_game->grid());
             child.makeMove(mm);
-            int val = -negamax(child, 7, -INT_MAX, INT_MAX, -_color);
+            int val = -negamax(child, 6, -INT_MAX, INT_MAX, -_color);
 
             if (bestValue <= val) {
                 if (bestValue < val) {
@@ -79,17 +79,15 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
     if (ttentry && ttentry->depth >= depth) {
         if (ttentry->zobrist_key == node.zobristHash()) {
             //qDebug() << ttentry->zobrist_key << ttentry->depth << ttentry->value << ttentry->flag;
-            if (ttentry->flag == FLAG_EXACT) {
+            if (ttentry->flag == FLAG_EXACT)
                 return ttentry->value;
-            } else if (ttentry->flag == FLAG_LOWER) {
+            else if (ttentry->flag == FLAG_LOWER)
                 alpha = qMax<int>(alpha, ttentry->value);
-            } else if (ttentry->flag == FLAG_UPPER) {
+            else if (ttentry->flag == FLAG_UPPER)
                 beta = qMin<int>(beta, ttentry->value);
-            }
 
-            if (alpha >= beta) {
+            if (alpha >= beta)
                 return ttentry->value;
-            }
         } else {
             qDebug() << "COLLISION";
         }

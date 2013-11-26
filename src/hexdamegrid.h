@@ -73,6 +73,7 @@ private:
     void zobristInit();
     static quint64 zobristString(const Coord &c, const Piece &p);
     static quint64 _zobrist_idx[61][4];
+    static quint64 _zobrist_turn;
     quint64 _zobrist_hash;
 
     static QHash<Coord, quint8> _coordToIdx;

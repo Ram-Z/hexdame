@@ -20,7 +20,8 @@
 #include "abstractplayer.h"
 
 AbstractPlayer::AbstractPlayer(PlayerType type, HexdameGame *game, Color color)
-    : _game(game)
+    : QObject((QObject *) game)
+    , _game(game)
     , _color(color)
     , _type(type)
 {
