@@ -26,6 +26,7 @@
 #include <log4cxx/logger.h>
 
 class HexdameGame;
+class HexdameView;
 
 class App : public QApplication
 {
@@ -53,6 +54,7 @@ public slots:
     void setWhitePlayer(int);
     void setBlackPlayer(int);
     void setDebugMode(bool);
+    void gameOver();
 
 private:
     void initGUI();
@@ -83,6 +85,9 @@ private:
     bool _interactive;
     std::shared_ptr<QMainWindow> _mainwindow;
     HexdameGame *_game = 0;
+    HexdameView *_gameView = 0;
+    QComboBox *_blackCombo = 0;
+    QComboBox *_whiteCombo = 0;
 };
 
 #endif

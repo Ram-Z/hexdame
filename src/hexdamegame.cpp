@@ -21,16 +21,12 @@
 
 #include "player.h"
 #include "player/heuristic.h"
-#include "player/negamaxplayerwtt.h"
 
 #include <QtGlobal>
 
 HexdameGame::HexdameGame(QObject *parent)
     : QObject(parent)
 {
-    setWhitePlayer(new NegaMaxPlayerWTt(this, White, new SomeHeuristic()));
-    setBlackPlayer(new NegaMaxPlayerWTt(this, Black, new SomeHeuristic()));
-
     connect(this, SIGNAL(playerMoved()), SLOT(startNextTurn()));
 }
 

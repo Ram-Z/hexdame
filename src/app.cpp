@@ -34,6 +34,7 @@
 #include "hexdameview.h"
 #include "hexdamegame.h"
 #include "player.h"
+#include "player/heuristic.h"
 
 namespace
 {
@@ -270,12 +271,13 @@ App::loadStatusBar()
 {
     //TODO maybe not use a statusbar for this
     QStatusBar *statusBar = _mainwindow->statusBar();
-    QStringList players{"Human", "Random"};
+    QStringList players{"Human", "Random", "NegaMax", "NegaMaxWTt"};
 
-    QComboBox *white = new QComboBox();
-    statusBar->addPermanentWidget(white);
-    white->addItems(players);
-    connect(white, SIGNAL(currentIndexChanged(int)), this, SLOT(setWhitePlayer(int)));
+    _whiteCombo = new QComboBox();
+    statusBar->addPermanentWidget(_whiteCombo);
+    _whiteCombo->addItems(players);
+    _whiteCombo->setCurrentIndex(3);
+    connect(_whiteCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(setWhitePlayer(int)));
 
     statusBar->addPermanentWidget(new QLabel("White"));
 
@@ -283,10 +285,10 @@ App::loadStatusBar()
 
     statusBar->addPermanentWidget(new QLabel("Black"));
 
-    QComboBox *black = new QComboBox();
-    statusBar->addPermanentWidget(black);
-    black->addItems(players);
-    connect(black, SIGNAL(currentIndexChanged(int)), this, SLOT(setBlackPlayer(int)));
+    _blackCombo = new QComboBox();
+    statusBar->addPermanentWidget(_blackCombo);
+    _blackCombo->addItems(players);
+    connect(_blackCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(setBlackPlayer(int)));
 }
 
 void
@@ -294,24 +296,41 @@ App::newGame()
 {
     if (_game) delete _game;
 
-    //TODO use the settings from the QActions
     _game = new HexdameGame(this);
+    _gameView = new HexdameView(_game);
 
-    HexdameView *b = new HexdameView(_game);
-    _mainwindow->setCentralWidget(b);
+    connect(_game, SIGNAL(gameOver()), this, SLOT(gameOver()));
+    setBlackPlayer(_blackCombo->currentIndex());
+    setWhitePlayer(_whiteCombo->currentIndex());
+
+    _mainwindow->setCentralWidget(_gameView);
 
     _game->startNextTurn();
 }
 
 void
+App::gameOver()
+{
+    _mainwindow->statusBar()->showMessage("Game Over");
+}
+
+void
 App::setBlackPlayer(int idx)
 {
+    HumanPlayer *player = new HumanPlayer(_game, Black);
     switch (idx) {
         case 0:
-            _game->setBlackPlayer(new HumanPlayer(_game, Black));
+            connect(_gameView, SIGNAL(playerMoved(Coord,Coord)), player, SLOT(moved(Coord,Coord)));
+            _game->setBlackPlayer(player);
             break;
         case 1:
             _game->setBlackPlayer(new RandomPlayer(_game, Black));
+            break;
+        case 2:
+            _game->setBlackPlayer(new NegaMaxPlayer(_game, Black, new SomeHeuristic()));
+            break;
+        case 3:
+            _game->setBlackPlayer(new NegaMaxPlayerWTt(_game, Black, new SomeHeuristic()));
             break;
     }
 }
@@ -319,12 +338,20 @@ App::setBlackPlayer(int idx)
 void
 App::setWhitePlayer(int idx)
 {
+    HumanPlayer *player = new HumanPlayer(_game, White);
     switch (idx) {
         case 0:
-            _game->setWhitePlayer(new HumanPlayer(_game, White));
+            connect(_gameView, SIGNAL(playerMoved(Coord,Coord)), player, SLOT(moved(Coord,Coord)));
+            _game->setWhitePlayer(player);
             break;
         case 1:
             _game->setWhitePlayer(new RandomPlayer(_game, White));
+            break;
+        case 2:
+            _game->setWhitePlayer(new NegaMaxPlayer(_game, White, new SomeHeuristic()));
+            break;
+        case 3:
+            _game->setWhitePlayer(new NegaMaxPlayerWTt(_game, White, new SomeHeuristic()));
             break;
     }
 }
