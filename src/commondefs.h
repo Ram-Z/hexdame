@@ -22,7 +22,7 @@
 
 #include <QList>
 #include <QSet>
-#include <QtGlobal>
+#include <QMetaType>
 
 class QDebug;
 
@@ -89,5 +89,6 @@ struct Move {
 
     friend QDebug operator<<(QDebug dbg, const Move &move);
 };
+Q_DECLARE_METATYPE(Move)
 
 #endif // COMMONDEFS_H

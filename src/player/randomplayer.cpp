@@ -29,13 +29,19 @@ RandomPlayer::RandomPlayer(HexdameGame *game, Color color)
     qsrand(QTime::currentTime().second());
 }
 
-void RandomPlayer::play()
+RandomPlayer::~RandomPlayer()
 {
-    // wait a bit before next move
-    QTime wait = QTime::currentTime().addSecs(1);
-    while (QTime::currentTime() < wait)
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    mutex.lock();
+    abort = true;
+    mutex.unlock();
 
+    wait();
+}
+
+
+void
+RandomPlayer::play()
+{
     QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
 
     int rand = qrand() % moves.size();
@@ -46,4 +52,10 @@ void RandomPlayer::play()
     Move randMove = moves.value(randCoord).values(randTo).at(rand);
 
     emit move(randMove);
+}
+
+void
+RandomPlayer::run()
+{
+    play();
 }

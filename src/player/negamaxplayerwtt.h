@@ -36,8 +36,12 @@ class NegaMaxPlayerWTt : public AbstractPlayer
 
 public:
     NegaMaxPlayerWTt(HexdameGame *game, Color color, AbstractHeuristic *heuristic);
+    virtual ~NegaMaxPlayerWTt();
 
     virtual void play();
+
+protected:
+    void run();
 
 private:
     int negamax(const HexdameGrid& node, int depth, int alpha, int beta, int color);

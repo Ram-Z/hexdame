@@ -31,7 +31,14 @@ public:
 
     virtual void play();
 
+public slots:
+    void moved(Coord from, Coord to);
+
+protected:
+    virtual void run();
+
 private:
+    Move _move;
 };
 
 #endif // HUMANPLAYER_H

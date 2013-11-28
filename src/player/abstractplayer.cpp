@@ -18,11 +18,21 @@
  */
 
 #include "abstractplayer.h"
+#include <QtDebug>
 
 AbstractPlayer::AbstractPlayer(PlayerType type, HexdameGame *game, Color color)
-    : QObject((QObject *) game)
+    : QThread((QObject *) game)
     , _game(game)
     , _color(color)
     , _type(type)
 {
+}
+
+AbstractPlayer::~AbstractPlayer()
+{
+    mutex.lock();
+    abort = true;
+    mutex.unlock();
+
+    wait();
 }

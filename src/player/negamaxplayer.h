@@ -31,8 +31,12 @@ class NegaMaxPlayer : public AbstractPlayer
 
 public:
     NegaMaxPlayer(HexdameGame *game, Color color, AbstractHeuristic *heuristic);
+    virtual ~NegaMaxPlayer();
 
     virtual void play();
+
+protected:
+    void run();
 
 private:
     int negamax(const HexdameGrid& node, int depth, int alpha, int beta, int color);

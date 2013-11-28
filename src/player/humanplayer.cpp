@@ -18,13 +18,30 @@
  */
 
 #include "humanplayer.h"
+#include <hexdamegame.h>
+#include <qeventloop.h>
 
 HumanPlayer::HumanPlayer(HexdameGame *game, Color color)
     : AbstractPlayer(Human, game, color)
 {
 }
 
-void HumanPlayer::play()
+void
+HumanPlayer::play()
 {
 
+}
+
+void
+HumanPlayer::moved(Coord from, Coord to)
+{
+    _move = _game->grid().validMoves(from).value(to);
+    emit move(_move);
+}
+
+
+void
+HumanPlayer::run()
+{
+    exec();
 }

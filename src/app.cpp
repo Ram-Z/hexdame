@@ -288,6 +288,7 @@ App::loadStatusBar()
     _blackCombo = new QComboBox();
     statusBar->addPermanentWidget(_blackCombo);
     _blackCombo->addItems(players);
+    _blackCombo->setCurrentIndex(3);
     connect(_blackCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(setBlackPlayer(int)));
 }
 

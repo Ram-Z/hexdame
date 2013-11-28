@@ -22,10 +22,11 @@
 
 #include "commondefs.h"
 
-#include <QtCore/QObject>
+#include <QThread>
+#include <QMutex>
 
 class HexdameGame;
-class AbstractPlayer : public QObject
+class AbstractPlayer : public QThread
 {
     Q_OBJECT
 
@@ -36,6 +37,7 @@ public:
     };
 
     AbstractPlayer(PlayerType type, HexdameGame *game, Color color);
+    virtual ~AbstractPlayer();
 
     PlayerType type() { return _type; }
 
@@ -46,12 +48,15 @@ signals:
     void move(const Move &);
 
 protected:
+    virtual void run() = 0;
+
+    QMutex mutex;
+    bool abort = false;
+
     const PlayerType _type;
 
     HexdameGame *_game;
     const Color _color;
-
-private:
 };
 
 #endif // ABSTRACTPLAYER_H
