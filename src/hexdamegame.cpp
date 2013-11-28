@@ -162,5 +162,13 @@ QDebug
 operator<<(QDebug dbg, const Coord &coord)
 {
     dbg.nospace() << "Coord(" << coord.x << "," << coord.y << ")";
-    return dbg.space();
+    return dbg.maybeSpace();
+}
+
+QDebug
+operator<<(QDebug dbg, const Move &move)
+{
+    dbg.nospace() << "Path: " << move.path;
+    dbg.nospace() << "Take: " << move.taken;
+    return dbg.maybeSpace();
 }

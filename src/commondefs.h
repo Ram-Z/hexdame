@@ -86,6 +86,8 @@ struct Move {
         return this->from() == m.from() && this->to() == m.to()
             && QSet<Coord>::fromList(this->taken) == QSet<Coord>::fromList(m.taken);
     }
+
+    friend QDebug operator<<(QDebug dbg, const Move &move);
 };
 
 #endif // COMMONDEFS_H
