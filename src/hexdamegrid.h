@@ -55,7 +55,9 @@ public:
     inline bool  isKing(const Coord &c) const
         { return (_whiteKings | _blackKings) & (1ULL << _coordToIdx[c]); }
     inline Color  color(const Coord &c) const
-        { return Hexdame::color(at(c)); }
+        { if (isWhite(c)) return White;
+          if (isBlack(c)) return Black;
+          return None; }
 
     void makeMove(const Move &move, bool partial = false);
     // does not check validity and calculates all valid moves, use for debug
@@ -66,17 +68,19 @@ public:
 
     quint64 zobristHash() const { return _zobrist_hash; }
 
+    static QHash<Coord, quint8> _coordToIdx;
+
 private:
     void dfs(const Coord &from, Move move = Move());
     void kingPiece(Coord c);
 
-    void zobristInit();
+    static const int SIZE = 9;
+    static void zobristInit();
     static quint64 zobristString(const Coord &c, const Piece &p);
     static quint64 _zobrist_idx[61][4];
     static quint64 _zobrist_turn;
     quint64 _zobrist_hash;
 
-    static QHash<Coord, quint8> _coordToIdx;
 
     quint64 _whitePawns = 0;
     quint64 _whiteKings = 0;

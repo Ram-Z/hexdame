@@ -30,12 +30,10 @@ quint64 HexdameGrid::_zobrist_turn;
 
 HexdameGrid::HexdameGrid()
 {
-    _coordToIdx.reserve(67);
-
-    static const int SIZE = 9;
-
     zobristInit();
 
+    _coordToIdx.reserve(67);
+    _zobrist_hash = 0;
     quint8 idx = 0;
     for (quint8 x = 0; x < SIZE; ++x) {
         for (quint8 y = 0; y < SIZE; ++y) {
@@ -146,24 +144,52 @@ HexdameGrid::winner() const
 void
 HexdameGrid::kingPiece(Coord c)
 {
-    if (color(c) == None) return;
+    static const quint64 white = 0x1f82040400000000;
+    static const quint64 black = 0x000000000404083f;
 
-    if (color(c) == White) {
-        if (c.x == 8 || c.y == 8) {
-            set(c, WhiteKing);
-            _zobrist_hash ^= zobristString(c, WhitePawn);
-            _zobrist_hash ^= zobristString(c, WhiteKing);
-            return;
-        }
+    quint64 mask = _blackPawns & black;
+    if (mask) {
+        _blackPawns ^= mask;
+        _blackKings ^= mask;
+
+        // use this while I still pass a Coord
+        _zobrist_hash ^= zobristString(c, BlackPawn);
+        _zobrist_hash ^= zobristString(c, BlackKing);
+        return;
+
+        // use this if for some reason I don't pass a Coord anymore
+//        quint8 idx = 0;
+//        // is this really faster?
+//        while (idx < 26 && !(mask & 1)) {
+//            ++idx;
+//            mask >>= 1;
+//        }
+//        _zobrist_hash ^= _zobrist_idx[idx][0]; //blackKing
+//        _zobrist_hash ^= _zobrist_idx[idx][1]; //blackPawn
+//        return;
     }
 
-    if (color(c) == Black) {
-        if (c.x == 0 || c.y == 0) {
-            set(c, BlackKing);
-            _zobrist_hash ^= zobristString(c, BlackPawn);
-            _zobrist_hash ^= zobristString(c, BlackKing);
-            return;
-        }
+    mask = _whitePawns & white;
+    if (mask) {
+        _whitePawns ^= mask;
+        _whiteKings ^= mask;
+
+        // use this while I still pass a Coord
+        _zobrist_hash ^= zobristString(c, WhitePawn);
+        _zobrist_hash ^= zobristString(c, WhiteKing);
+        return;
+
+        // use this if for some reason I don't pass a Coord anymore
+//        quint8 idx = 34;
+//        mask >>= idx;
+//        // is this really faster?
+//        while (idx < 61 && !(mask & 1)) {
+//            ++idx;
+//            mask >>= 1;
+//        }
+//        _zobrist_hash ^= _zobrist_idx[idx][2]; //whitePawn
+//        _zobrist_hash ^= _zobrist_idx[idx][3]; //whiteKing
+//        return;
     }
 }
 
@@ -334,8 +360,6 @@ HexdameGrid::zobristInit()
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<quint64> dis(std::numeric_limits<quint64>::min(), std::numeric_limits<quint64>::max());
-
-    _zobrist_hash = 0;
 
     for (int i = 0; i < 61; ++i) {
         for (int j = 0; j < 4; ++j) {
