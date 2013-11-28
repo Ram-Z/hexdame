@@ -49,15 +49,14 @@ NegaMaxPlayer::~NegaMaxPlayer()
 void
 NegaMaxPlayer::play()
 {
-    // wait a bit before next move
-    QTime wait = QTime::currentTime().addMSecs(10);
-    while (QTime::currentTime() < wait)
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    QTime tic;
+    tic.start();
 
     nodeCnt = 0;
     int bestValue = INT_MIN;
     QList<Move> bestMoves;
     QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
+    int depth = 7;
     foreach (auto m, moves.values()) {
         foreach (Move mm, m.values()) {
             if (abort) return;
@@ -65,7 +64,7 @@ NegaMaxPlayer::play()
             nodeCnt++;
             HexdameGrid child(_game->grid());
             child.makeMove(mm);
-            int val = -negamax(child, 3, -INT_MAX, INT_MAX, -_color);
+            int val = -negamax(child, depth-1, -INT_MAX, INT_MAX, -_color);
 
             if (bestValue <= val) {
                 if (bestValue < val) {
@@ -76,7 +75,7 @@ NegaMaxPlayer::play()
             }
         }
     }
-    qDebug() << nodeCnt;
+    qDebug("%7s %5s %2d %8d %10d", "NMP", _color == White ? "white" : "black", depth, nodeCnt, tic.elapsed());
 
     emit move(bestMoves.at(qrand() % bestMoves.size()));
 }

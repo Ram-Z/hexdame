@@ -50,10 +50,13 @@ NegaMaxPlayerWTt::~NegaMaxPlayerWTt()
 void
 NegaMaxPlayerWTt::play()
 {
+    QTime tic;
+    tic.start();
     nodeCnt = 0;
     int bestValue = INT_MIN;
     QList<Move> bestMoves;
     QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
+    int depth = 7;
     foreach (auto m, moves.values()) {
         foreach (Move mm, m.values()) {
             if (abort) return;
@@ -61,7 +64,7 @@ NegaMaxPlayerWTt::play()
             nodeCnt++;
             HexdameGrid child(_game->grid());
             child.makeMove(mm);
-            int val = -negamax(child, 5, -INT_MAX, INT_MAX, -_color);
+            int val = -negamax(child, depth - 1, -INT_MAX, INT_MAX, -_color);
 
             if (bestValue <= val) {
                 if (bestValue < val) {
@@ -72,7 +75,7 @@ NegaMaxPlayerWTt::play()
             }
         }
     }
-    qDebug() << nodeCnt;
+    qDebug("%7s %5s %2d %8d %10d", "NMPwTt", _color == White ? "white" : "black", depth, nodeCnt, tic.elapsed());
 
     emit move(bestMoves.at(qrand() % bestMoves.size()));
 }
