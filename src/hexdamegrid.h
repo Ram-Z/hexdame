@@ -45,15 +45,15 @@ public:
 
     // convenience functions
     inline bool isWhite(const Coord &c) const
-        { return (_whitePawns | _whiteKings) & (1ULL << _coordToIdx[c]); }
+        { return _white & (1ULL << _coordToIdx[c]); }
     inline bool isBlack(const Coord &c) const
-        { return (_blackPawns | _blackKings) & (1ULL << _coordToIdx[c]); }
+        { return _black & (1ULL << _coordToIdx[c]); }
     inline bool isEmpty(const Coord &c) const
-        { return !((_whitePawns | _whiteKings | _blackPawns | _blackKings) & (1ULL << _coordToIdx[c])); }
+        { return !((_white | _black) & (1ULL << _coordToIdx[c])); }
     inline bool  isPawn(const Coord &c) const
-        { return (_whitePawns | _blackPawns) & (1ULL << _coordToIdx[c]); }
+        { return ((_white | _black) & ~_kings) & (1ULL << _coordToIdx[c]); }
     inline bool  isKing(const Coord &c) const
-        { return (_whiteKings | _blackKings) & (1ULL << _coordToIdx[c]); }
+        { return _kings & (1ULL << _coordToIdx[c]); }
     inline Color  color(const Coord &c) const
         { if (isWhite(c)) return White;
           if (isBlack(c)) return Black;
@@ -82,10 +82,9 @@ private:
     quint64 _zobrist_hash;
 
 
-    quint64 _whitePawns = 0;
-    quint64 _whiteKings = 0;
-    quint64 _blackPawns = 0;
-    quint64 _blackKings = 0;
+    quint64 _white = 0;
+    quint64 _black = 0;
+    quint64 _kings = 0;
 
     QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
     quint8 _maxTaken;

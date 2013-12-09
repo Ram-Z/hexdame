@@ -41,11 +41,11 @@ HexdameGrid::HexdameGrid()
             if (qAbs(x - y) <= s) {
                 _coordToIdx[Coord(x,y)] = idx;
                 if (x < s && y < s) {
-                    _whitePawns |= 1ULL << idx;
+                    _white |= 1ULL << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][2];
                     _cntWhite++;
                 } else if (x > s && y > s) {
-                    _blackPawns |= 1ULL << idx;
+                    _black |= 1ULL << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][1];
                     _cntBlack++;
                 }
@@ -60,10 +60,9 @@ HexdameGrid::HexdameGrid()
 }
 
 HexdameGrid::HexdameGrid(const HexdameGrid &other)
-    : _whitePawns(other._whitePawns)
-    , _whiteKings(other._whiteKings)
-    , _blackPawns(other._blackPawns)
-    , _blackKings(other._blackKings)
+    : _white(other._white)
+    , _black(other._black)
+    , _kings(other._kings)
     , _cntWhite(other._cntWhite)
     , _cntBlack(other._cntBlack)
     , _validMoves(other._validMoves)
@@ -77,10 +76,9 @@ HexdameGrid &
 HexdameGrid::operator=(const HexdameGrid &other)
 {
     if (this != &other) {
-        _whitePawns = other._whitePawns;
-        _whiteKings = other._whiteKings;
-        _blackPawns = other._blackPawns;
-        _blackKings = other._blackKings;
+        _white = other._white;
+        _black = other._black;
+        _kings = other._kings;
         _cntWhite = other._cntWhite;
         _cntBlack = other._cntBlack;
         _validMoves = other._validMoves;
@@ -93,10 +91,9 @@ HexdameGrid::operator=(const HexdameGrid &other)
 bool
 HexdameGrid::operator==(const HexdameGrid &other) const
 {
-    return _whitePawns == other._whitePawns
-        && _blackPawns == other._blackPawns
-        && _whiteKings == other._whiteKings
-        && _blackKings == other._blackKings;
+    return _white == other._white
+        && _black == other._black
+        && _kings == other._kings;
 }
 
 Piece
@@ -104,10 +101,10 @@ HexdameGrid::at(const Coord& c) const
 {
     quint64 mask = 1ULL << _coordToIdx.value(c);
 
-    if (_whitePawns & mask) return WhitePawn;
-    if (_blackPawns & mask) return BlackPawn;
-    if (_whiteKings & mask) return WhiteKing;
-    if (_blackKings & mask) return BlackKing;
+    if (_kings & mask)
+        return _white & mask ? WhiteKing : BlackKing;
+    if (_white & mask) return WhitePawn;
+    if (_black & mask) return BlackPawn;
     return Empty;
 }
 
@@ -116,16 +113,15 @@ HexdameGrid::set(const Coord& c, Piece p)
 {
     quint64 mask = 1ULL << _coordToIdx.value(c);
 
-    _whitePawns &= ~mask;
-    _blackPawns &= ~mask;
-    _whiteKings &= ~mask;
-    _blackKings &= ~mask;
+    _white &= ~mask;
+    _black &= ~mask;
+    _kings &= ~mask;
 
     switch (p) {
-        case WhitePawn: _whitePawns |= mask; break;
-        case BlackPawn: _blackPawns |= mask; break;
-        case WhiteKing: _whiteKings |= mask; break;
-        case BlackKing: _blackKings |= mask; break;
+        case WhitePawn: _white |= mask; break;
+        case BlackPawn: _black |= mask; break;
+        case WhiteKing: _white |= mask; _kings |= mask; break;
+        case BlackKing: _black |= mask; _kings |= mask; break;
     }
 }
 
@@ -147,10 +143,9 @@ HexdameGrid::kingPiece(Coord c)
     static const quint64 white = 0x1f82040400000000;
     static const quint64 black = 0x000000000404083f;
 
-    quint64 mask = _blackPawns & black;
+    quint64 mask = _black & black;
     if (mask) {
-        _blackPawns ^= mask;
-        _blackKings ^= mask;
+        _kings |= mask;
 
         // use this while I still pass a Coord
         _zobrist_hash ^= zobristString(c, BlackPawn);
@@ -169,10 +164,9 @@ HexdameGrid::kingPiece(Coord c)
 //        return;
     }
 
-    mask = _whitePawns & white;
+    mask = _white & white;
     if (mask) {
-        _whitePawns ^= mask;
-        _whiteKings ^= mask;
+        _kings |= mask;
 
         // use this while I still pass a Coord
         _zobrist_hash ^= zobristString(c, WhitePawn);
