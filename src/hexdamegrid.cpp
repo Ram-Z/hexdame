@@ -27,19 +27,23 @@
 QHash<Coord, quint8> HexdameGrid::_coordToIdx;
 quint64 HexdameGrid::_zobrist_idx[61][4];
 quint64 HexdameGrid::_zobrist_turn;
+bool HexdameGrid::initialized = false;
 
 HexdameGrid::HexdameGrid()
 {
-    zobristInit();
-
-    _coordToIdx.reserve(67);
+    if (!initialized) {
+        zobristInit();
+        _coordToIdx.reserve(67);
+    }
     _zobrist_hash = 0;
     quint8 idx = 0;
     for (quint8 x = 0; x < SIZE; ++x) {
         for (quint8 y = 0; y < SIZE; ++y) {
             static const int s = SIZE / 2;
             if (qAbs(x - y) <= s) {
-                _coordToIdx[Coord(x,y)] = idx;
+                if (!initialized)
+                    _coordToIdx[Coord(x,y)] = idx;
+
                 if (x < s && y < s) {
                     _white |= 1ULL << idx;
                     _zobrist_hash ^= _zobrist_idx[idx][2];
@@ -54,7 +58,9 @@ HexdameGrid::HexdameGrid()
         }
     }
 
-    _coordToIdx.squeeze();
+    if (!initialized) {
+        _coordToIdx.squeeze();
+    }
 
     computeValidMoves(White);
 }
@@ -238,7 +244,6 @@ HexdameGrid::move(const Coord &from, const Coord &to)
     computeValidMoves(None);
 }
 
-
 QHash<Coord, QMultiHash<Coord, Move>>
 HexdameGrid::computeValidMoves(Color col)
 {
@@ -293,6 +298,58 @@ HexdameGrid::computeValidMoves(Color col)
     return _validMoves;
 }
 
+QList<MoveBit>
+HexdameGrid::computeValidMoveBits(Color col)
+{
+    _maxTaken = 0;
+    _validMoves.clear();
+
+    if (col == None) {
+        QList<MoveBit> meh;
+        meh.append(computeValidMoves(White));
+        meh.append(computeValidMoves(Black));
+        _validMoves = meh;
+        return _validMoves;
+    }
+
+    for (int i = 0; i < 61; ++i) {
+        dfs(i);
+    }
+
+    if (!_validMoveBits.empty()) return _validMoveBits;
+
+    if (col == White)
+        _validMoves.reserve(2*_cntWhite);
+    else if (col == Black)
+        _validMoves.reserve(2*_cntBlack);
+
+    // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
+    const static QList<Coord> l{Coord(1,0), Coord(0,1), Coord(1,1), Coord(0,-1), Coord(-1,0), Coord(-1,-1)};
+    foreach(Coord from, coords()) {
+        if (color(from) != col) continue;
+        for (int i = 0; i < l.size(); ++i) {
+            if (i <  3 && isPawn(from) && isBlack(from)) i = 3; // jump to Blacks moves
+            if (i >= 3 && isPawn(from) && isWhite(from)) break; // ignore the rest
+
+            for (int j = 1; j < 9; ++j) {
+                Coord to = from + j*l.at(i);
+
+                if (!contains(to)) break;
+                if (!isEmpty(to)) break;
+
+                // create Move and add to list
+                Move m;
+                m.path << from << to;
+                _validMoves[from].insert(to, m);
+
+                if (isPawn(from)) break; // Pawns can't jump further than 1
+            }
+        }
+    }
+
+    return _validMoves;
+}
+
 void
 HexdameGrid::dfs(const Coord &from, Move move)
 {
@@ -300,6 +357,61 @@ HexdameGrid::dfs(const Coord &from, Move move)
     static bool king;
     if (move.empty()) {
         move.path << from;
+        col = color(from);
+        king = isKing(from);
+    }
+
+    const static QList<Coord> l{Coord(1,0), Coord(-1,0), Coord(0,1), Coord(0,-1), Coord(1,1), Coord(-1,-1)};
+    foreach (Coord lv, l) {
+        for (int i = 1; i < 9; ++i) {
+            Coord over = from + i*lv;
+
+            if (!contains(over)) break;           // not on the grid
+            if (col == color(over)) break;        // same colour
+            if (move.taken.contains(over)) break; // already took piece
+
+            if (col == -color(over)) {
+                while (++i < 9) {
+                    Coord to = from + i*lv;
+                    // non-empty cell after jumping
+                    if (!contains(to) || (move.from() != to && !isEmpty(to))) { i = 9; break; }
+
+                    // create a new Move
+                    Move newMove(move);
+                    newMove.taken << over;
+                    newMove.path << to;
+
+                    // update/reset validMoves list
+                    if (newMove.taken.size() >= _maxTaken) {
+                        if (newMove.taken.size() > _maxTaken) {
+                            _validMoves.clear();
+                            _maxTaken = newMove.taken.size();
+                        }
+                        bool dup = false;
+                        foreach (Move oldMove, _validMoves.value(move.from())) {
+                            if (dup = oldMove == newMove) break; // moves are equivalent
+                        }
+                        if (!dup) _validMoves[newMove.from()].insert(to, newMove);
+                    }
+
+                    // recursive call
+                    dfs(to, newMove);
+
+                    if (!king) break; // Pawns can't jump further than 1
+                }
+            }
+            if (!king) break; // Pawns can't jump further than 1
+        }
+    }
+}
+
+void
+HexdameGrid::dfs(const quint8 &from, MoveBit move)
+{
+    static Color col;
+    static bool king;
+    if (move.empty()) {
+        move.path = 1ULL << from;
         col = color(from);
         king = isKing(from);
     }
