@@ -90,7 +90,7 @@ HexdameView::HexdameView(HexdameGame *game, QWidget *parent)
         coordToPiece[c] = p;
 
 #if 1   // add text coords
-        QGraphicsTextItem *t = new QGraphicsTextItem(QString("{%1,%2}").arg(c.x).arg(c.y), h);
+        QGraphicsTextItem *t = new QGraphicsTextItem(QString("{%1,%2}\n%3").arg(c.x).arg(c.y).arg(game->grid()._coordToIdx.value(c)), h);
         t->setZValue(1);
         t->rotate(180);
 #endif
@@ -138,13 +138,14 @@ HexdameView::mousePressEvent(QMouseEvent *event)
     // not selected a piece
     if (!piece) return;
 
-    QMultiHash<Coord, Move> moves = _game->grid().validMoves(piece->coord());
-
     if (!_game->debug()) {
         if (!_game->currentPlayerIsHuman()) return;
         if (color(piece->state()) != _game->currentColor()) return;
-        if (moves.empty()) return;
     }
+
+    QMultiHash<Coord, Move> moves = _game->grid().computeValidMoves(_game->currentColor()).value(piece->coord());
+
+    if (!_game->debug() && moves.empty()) return;
 
     QGraphicsView::mousePressEvent(event);
 

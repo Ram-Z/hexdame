@@ -35,7 +35,6 @@ HumanPlayer::play()
 void
 HumanPlayer::moved(Coord from, Coord to)
 {
-    _move = _game->grid().validMoves(from).value(to);
     emit move(_move);
 }
 

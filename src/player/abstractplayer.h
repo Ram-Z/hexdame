@@ -46,6 +46,7 @@ public slots:
 
 signals:
     void move(const Move &);
+    void moveBit(const MoveBit &);
 
 protected:
     virtual void run() = 0;

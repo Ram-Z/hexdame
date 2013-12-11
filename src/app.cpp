@@ -333,9 +333,6 @@ App::setBlackPlayer(int idx)
         case 3:
             _game->setBlackPlayer(new NegaMaxPlayerWTt(_game, Black, new SomeHeuristic()));
             break;
-        case 4:
-            _game->setBlackPlayer(new NegaMaxPlayerWTtMo(_game, Black, new SomeHeuristic()));
-            break;
     }
 }
 
@@ -356,9 +353,6 @@ App::setWhitePlayer(int idx)
             break;
         case 3:
             _game->setWhitePlayer(new NegaMaxPlayerWTt(_game, White, new SomeHeuristic()));
-            break;
-        case 4:
-            _game->setWhitePlayer(new NegaMaxPlayerWTtMo(_game, White, new SomeHeuristic()));
             break;
     }
 }

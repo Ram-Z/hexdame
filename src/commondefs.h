@@ -20,9 +20,13 @@
 #ifndef COMMONDEFS_H
 #define COMMONDEFS_H
 
+#include <bitset>
+
 #include <QList>
 #include <QSet>
 #include <QMetaType>
+
+typedef std::bitset<61> BitBoard;
 
 class QDebug;
 
@@ -90,5 +94,30 @@ struct Move {
     friend QDebug operator<<(QDebug dbg, const Move &move);
 };
 Q_DECLARE_METATYPE(Move)
+
+struct MoveBit {
+    BitBoard path;
+    BitBoard taken;
+    // test if king: _kings & path
+
+    MoveBit() { }
+    MoveBit(const MoveBit &other)
+        : path(other.path)
+        , taken(other.taken) { }
+    MoveBit & operator=(const MoveBit &other) {
+        if (this != &other) {
+            path = other.path;
+            taken = other.taken;
+        }
+        return *this;
+    }
+    inline bool empty() const { return (path | taken).none(); }
+    bool operator==(const MoveBit &m) const {
+        return path == m.path && taken == m.taken;
+    }
+
+    friend QDebug operator<<(QDebug dbg, const MoveBit &move);
+};
+Q_DECLARE_METATYPE(MoveBit)
 
 #endif // COMMONDEFS_H
