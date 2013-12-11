@@ -42,9 +42,6 @@ public:
     static QList<Coord> coords() { return _coordToIdx.keys(); }
     static bool contains(const Coord &c) { return _coordToIdx.contains(c); }
 
-    const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
-    const QMultiHash<Coord, Move> validMoves(Coord c) const { return _validMoves.value(c); }
-
     // convenience functions
     inline bool isWhite(quint8 idx) const { return _white.test(idx); }
     inline bool isBlack(quint8 idx) const { return _black.test(idx); }
@@ -69,7 +66,7 @@ public:
     void move(const Coord &from, const Coord &to);
 
     Color winner() const;
-    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
+    QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col) const;
     QList<MoveBit> computeValidMoveBits(Color col) const;
 
     quint64 zobristHash() const { return _zobrist_hash; }
@@ -86,7 +83,7 @@ private:
         SouthWest
     };
 
-    void dfs(const Coord &from, Move move = Move());
+    void dfs(const Coord &from, Move move = Move()) const;
     void dfs(const quint8 &from, MoveBit move = MoveBit()) const;
     void kingPiece();
 
@@ -104,7 +101,7 @@ private:
     BitBoard _black = 0;
     BitBoard _kings = 0;
 
-    QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
+    mutable QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
     mutable QList<MoveBit> _validMoveBits;
     mutable quint8 _maxTaken;
 

@@ -57,7 +57,7 @@ NegaMaxPlayerWTt::play()
     int bestValue = INT_MIN;
     QList<MoveBit> bestMoves;
     QList<MoveBit> moves = _game->grid().computeValidMoveBits(_color);
-    int depth = 5;
+    int depth = 7;
     foreach (MoveBit m, moves) {
         if (abort) return;
 

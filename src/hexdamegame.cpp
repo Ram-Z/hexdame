@@ -68,7 +68,7 @@ HexdameGame::makeMove(const Coord &from, const Coord &to)
         return;
     }
 
-    Move move = _grid.validMoves(from).value(to);
+    Move move = _grid.computeValidMoves(currentColor()).value(from).value(to);
     makeMove(move);
 }
 
@@ -107,7 +107,7 @@ HexdameGame::makePartialMove(const Coord &from, const Coord &to)
         return;
     }
 
-    QMultiHash<Coord, Move> tmpHash = _grid.validMoves(from);
+    QMultiHash<Coord, Move> tmpHash = _grid.computeValidMoves(currentColor()).value(from);
     Move m;
     foreach (Move move, tmpHash.values()) {
         // not a partial moves

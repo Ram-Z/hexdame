@@ -42,16 +42,12 @@ RandomPlayer::~RandomPlayer()
 void
 RandomPlayer::play()
 {
-    QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
+    QList<MoveBit> moves = _game->grid().computeValidMoveBits(_color);
 
     int rand = qrand() % moves.size();
-    Coord randCoord = moves.keys().at(rand);
-    rand = qrand() % moves.value(randCoord).keys().size();
-    Coord randTo = moves.value(randCoord).keys().at(rand);
-    rand = qrand() % moves.value(randCoord).values(randTo).size();
-    Move randMove = moves.value(randCoord).values(randTo).at(rand);
+    MoveBit randMove = moves.at(rand);
 
-    emit move(randMove);
+    emit moveBit(randMove);
 }
 
 void

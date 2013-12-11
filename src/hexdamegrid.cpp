@@ -208,10 +208,6 @@ HexdameGrid::makeMove(const Move &move, bool partial)
     } else {
         kingPiece();
         _zobrist_hash ^= _zobrist_turn;
-        if (color(move.to()) == White)
-            computeValidMoves(Black);
-        if (color(move.to()) == Black)
-            computeValidMoves(White);
     }
 }
 
@@ -249,10 +245,6 @@ HexdameGrid::makeMoveBit(const MoveBit &move)
 
     kingPiece();
     _zobrist_hash ^= _zobrist_turn;
-   // if (color(p) == White)
-   //     computeValidMoves(Black);
-   // if (color(p) == Black)
-   //     computeValidMoves(White);
 }
 
 void
@@ -267,23 +259,13 @@ HexdameGrid::move(const Coord &from, const Coord &to)
 
     set(to, at(from));
     set(from, Empty);
-
-    computeValidMoves(None);
 }
 
 QHash<Coord, QMultiHash<Coord, Move>>
-HexdameGrid::computeValidMoves(Color col)
+HexdameGrid::computeValidMoves(Color col) const
 {
     _maxTaken = 0;
     _validMoves.clear();
-
-    if (col == None) {
-        QHash<Coord, QMultiHash<Coord, Move>> meh;
-        meh.unite(computeValidMoves(White));
-        meh.unite(computeValidMoves(Black));
-        _validMoves = meh;
-        return _validMoves;
-    }
 
     foreach (Coord from, coords()) {
         if (color(from) != col) continue;
@@ -331,14 +313,6 @@ HexdameGrid::computeValidMoveBits(Color col) const
     _maxTaken = 0;
     _validMoveBits.clear();
 
-    if (col == None) {
-        QList<MoveBit> meh;
-        meh.append(computeValidMoveBits(White));
-        meh.append(computeValidMoveBits(Black));
-        _validMoveBits = meh;
-        return _validMoveBits;
-    }
-
     for (int i = 0; i < 61; ++i) {
         if (color(i) != col) continue;
         dfs(i);
@@ -374,7 +348,7 @@ HexdameGrid::computeValidMoveBits(Color col) const
 }
 
 void
-HexdameGrid::dfs(const Coord &from, Move move)
+HexdameGrid::dfs(const Coord& from, Move move) const
 {
     static Color col;
     static bool king;
