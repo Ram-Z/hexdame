@@ -41,11 +41,11 @@ HexdameGrid::HexdameGrid()
             if (qAbs(x - y) <= s) {
                 _coordToIdx[Coord(x,y)] = idx;
                 if (x < s && y < s) {
-                    _white |= 1ULL << idx;
+                    _white.set(idx);
                     _zobrist_hash ^= _zobrist_idx[idx][2];
                     _cntWhite++;
                 } else if (x > s && y > s) {
-                    _black |= 1ULL << idx;
+                    _black.set(idx);
                     _zobrist_hash ^= _zobrist_idx[idx][1];
                     _cntBlack++;
                 }
@@ -99,29 +99,29 @@ HexdameGrid::operator==(const HexdameGrid &other) const
 Piece
 HexdameGrid::at(const Coord& c) const
 {
-    quint64 mask = 1ULL << _coordToIdx.value(c);
+    quint8 idx = _coordToIdx.value(c);
 
-    if (_kings & mask)
-        return _white & mask ? WhiteKing : BlackKing;
-    if (_white & mask) return WhitePawn;
-    if (_black & mask) return BlackPawn;
+    if (_kings.test(idx))
+        return _white.test(idx) ? WhiteKing : BlackKing;
+    if (_white.test(idx)) return WhitePawn;
+    if (_black.test(idx)) return BlackPawn;
     return Empty;
 }
 
 void
 HexdameGrid::set(const Coord& c, Piece p)
 {
-    quint64 mask = 1ULL << _coordToIdx.value(c);
+    quint8 idx = _coordToIdx.value(c);
 
-    _white &= ~mask;
-    _black &= ~mask;
-    _kings &= ~mask;
+    _white.reset(idx);
+    _black.reset(idx);
+    _kings.reset(idx);
 
     switch (p) {
-        case WhitePawn: _white |= mask; break;
-        case BlackPawn: _black |= mask; break;
-        case WhiteKing: _white |= mask; _kings |= mask; break;
-        case BlackKing: _black |= mask; _kings |= mask; break;
+        case WhitePawn: _white.set(idx); break;
+        case BlackPawn: _black.set(idx); break;
+        case WhiteKing: _white.set(idx); _kings.set(idx); break;
+        case BlackKing: _black.set(idx); _kings.set(idx); break;
     }
 }
 
@@ -140,11 +140,11 @@ HexdameGrid::winner() const
 void
 HexdameGrid::kingPiece(Coord c)
 {
-    static const quint64 white = 0x1f82040400000000;
-    static const quint64 black = 0x000000000404083f;
+    static const BitBoard white(0x1f82040400000000ULL);
+    static const BitBoard black(0x000000000404083fULL);
 
-    quint64 mask = _black & black;
-    if (mask) {
+    BitBoard mask = _black & black;
+    if (mask.any()) {
         _kings |= mask;
 
         // use this while I still pass a Coord
@@ -165,7 +165,7 @@ HexdameGrid::kingPiece(Coord c)
     }
 
     mask = _white & white;
-    if (mask) {
+    if (mask.any()) {
         _kings |= mask;
 
         // use this while I still pass a Coord
