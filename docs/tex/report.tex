@@ -1,30 +1,175 @@
 \documentclass[a4paper,10pt]{article}
 \usepackage[utf8]{inputenc}
+%\usepackage[backend=biber]{biblatex}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
 %\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{listings}
+\lstset{%
+ language=C++,                   % choose the language of the code
+ basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+ numbers=left,                   % where to put the line-numbers
+ numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+ stepnumber=1,                   % the step between two line-numbers. If it is 1 each line will be numbered
+ numbersep=5pt,                  % how far the line-numbers are from the code
+ backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+ showspaces=false,               % show spaces adding particular underscores
+ showstringspaces=false,         % underline spaces within strings
+ showtabs=false,                 % show tabs within strings adding particular underscores
+ frame=single,           % adds a frame around the code
+ float=tb,
+ tabsize=2,          % sets default tabsize to 2 spaces
+ captionpos=b,           % sets the caption-position to bottom
+ breaklines=true,        % sets automatic line breaking
+ breakatwhitespace=false,    % sets if automatic breaks should only happen at whitespace
+ escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+\usepackage{caption}
+\usepackage{subcaption}
 \usepackage{hyperref}
+\usepackage[onehalfspacing]{setspace}
 
-%opening
-\title{Hexdame}
-\author{Samir Benmendil, \textit{s.benmendil@student.maastrichtuniversity.nl}}
+\bibliographystyle{ieeetr}
 
 \begin{document}
-
+\title{Hexdame}
+\author{Samir Benmendil \\
+  Department of Knowledge Engineering, \\
+  Maastricht University, \\
+  \texttt{s.benmendil@student.maastrichtuniversity.nl}}
+\date{\today}
 \maketitle
 
 \begin{abstract}
-
+This report presents my implementation of a minimax based search algorithm applied to the game Hexdame. The different techniques used are introduced briefly, application specific implementation are explained in-depth.
 \end{abstract}
 
 \section{Introduction}
+The lecturers of \emph{Intelligent Search \& Games} at the \emph{Department of Knowledge Engineering} of \emph{Maastricht University} are organizing a competition. Students attending the class will play a game of Hexdame using their implementation of a minimax-based search algorithm against each other.
+
+This report presents my implementation. The first section introduces the game and its rules, the second section briefly describes the techniques I have used or plan to use. Followed by the results and conclusion. In future research, different approaches on optimising the implementation at the time of this writing will be proposed, some of them will be implemented before the competition.
+
 \section{The Game} % you lost it
-Hexdame is a variation of international draughts played on a hexagonal grid instead of the traditional square board. It was invented in 1979 by Christian Freeling. \cite{Freeling2013}
+Hexdame is a variation of international draughts played on a hexagonal grid instead of the traditional square board. It was invented in 1979 by Christian Freeling~\cite{Freeling2013}.
 
 \subsection{Rules}
+The rules of Hexdame can be taken directly from the rules of international checkers, these are listed below for reference:
+\begin{itemize}
+ \item White moves first, then moves alternate.
+ \item If a player cannot move, he loses the game.
+ \item Men move forward, if a men reaches the last row at the end of a move, it is promoted to king.
+ \item If a piece can jump, it must do so; if it can jump multiple times in one move, it must capture the maximum number of the opponents pieces.
+ \item Captured pieces are removed from the board at the end of the move.
+ \item Kings are said to be flying; they can move any number of cells in the same direction.
+ \item When a king jumps, it may land on any empty cell immediately beyond the jumped piece.
+ \item During a multi-jump, a piece may not be jumped twice.
+ \item If the players agree, or if the same position repeats three times with the same player having the move, the game is a draw.
+\end{itemize}
 
+Notable differences in Hexdame are:
+\begin{itemize}
+ \item The board consists of 61 cells and each player starts with 16 men in the initial setup shown in \autoref{fig:initial-board}.
+ \item Men can move forward in three directions and capture in six.
+ \item Kings can move and capture in six directions.
+\end{itemize}
+
+\begin{figure}
+ \centering
+ \includegraphics[width=.5\textwidth]{./img/hexgrid-initial}
+ \caption{Initial board configuration}
+ \label{fig:initial-board}
+\end{figure}
+
+\section{Implementation}
+The game is being implemented in \texttt{C++} with the \texttt{Qt} framework. Wherever speed was of of the essence, pure \texttt{C++} provides quick computations, and where speed wasn't too important (the GUI) the ease of use of \texttt{Qt} can be exploited. The source code is released under the GPL-v3 license.
+
+The rest of this section will quickly introduce the techniques used and will refer the reader to the respective references for an in-depth explanation where necessary.
+
+\subsection*{Bitboards}
+Hexdame only has two colours, 61 cells and two different kind of pieces. That means that the entire game state can be saved in three 64-bit integers, totalling in only 28 bytes of memory. There is one bitboard for the \emph{white pieces}, one for the \emph{black pieces} and one for the \emph{kings}.
+
+In order do extract or modify the bitboards, simple bitwise operations can be used. Setting a piece is a simple \texttt{or} operation with a mask containing a single activated bit; unsetting a piece is a simple \texttt{and} operation with a mask containing a single deactivated bit; moving a piece can be done by \texttt{xor}ing a mask with only two set bits. \autoref{lst:bitboard-operations} shows a few common operations.
+
+\begin{lstlisting}[language=C++,caption={Bitboard operations},label=lst:bitboard-operations]
+white |=   1<<15  // set white piece at position 15
+black &= ~(1<<15) // unset black piece at position 15
+whitekings = white &  kings // positions of white kings
+blackmen   = black & ~kings // positions of black men
+white ^= 3 // moves white piece from 0 to 1 or vice versa
+\end{lstlisting}
+
+The use of bitboards can greatly improve the performance of operations on the board, since bitwise operations can be done in a single CPU cycle and the memory footprint of bitboards is much lower.
+
+Working with bitboards at a higher level has proven to be difficult. Accessing the board has therefore been abstracted with the help of \texttt{Coord\{x,y\}} classes. \autoref{fig:mapping} shows the mapping between xy--coordinates (\ref{fig:hexgrid-coordboard}) and bit positions (\ref{fig:hexgrid-bitboard}). This mapping is saved in a static hashmap, for quick access.
+
+\begin{figure}
+ \centering
+ \begin{subfigure}[b]{.5\textwidth}
+  \includegraphics[width=\textwidth]{./img/hexgrid-coordboard}
+  \caption{xy--coordinates}
+  \label{fig:hexgrid-coordboard}
+ \end{subfigure}%
+ ~ %
+ \begin{subfigure}[b]{.5\textwidth}
+  \includegraphics[width=\textwidth]{./img/hexgrid-bitboard}
+  \caption{bit positions}
+  \label{fig:hexgrid-bitboard}
+ \end{subfigure}
+ \caption{Coordinate mapping}\label{fig:mapping}
+\end{figure}
+
+\subsection*{Move Generation}
+Hexdame forces a player to make the move that captures the most opponents pieces. This requires the program to generate a list of all possible moves and only allow the one with the most jumps to be played. The longest move is determined by using a \emph{depth-first search}.
+
+Move generation does not yet use bitboards and is therefore a performance drain.
+
+\subsection*{Negamax}
+Negamax is a variant of the minimax algorithm. It exploits the zero-sum property of a game to simplify the implementation of minimax. Hexdame is a zero-sum, perfect information, symmetric game which is well suited for a Negamax search.
+
+The game has a highly variable branching factor reaching from $1$ when a capture is forced to $48$ when all men are still on the board and none are blocked\footnote{Note that this is highly unlikely}. Some preliminary tests show that the average branching factor is 18.
+
+\subsection*{Alpha--beta Pruning}
+Alpha--beta pruning is an extension to the minimax algorithm which tries to reduce the number of nodes it needs to evaluate~\cite{Brudno1963,Knuth1976}. A simple alpha--beta algorithm has several drawbacks, it needs to recalculate the score of boards at each iteration, and if it doesn't have a good move at the beginning of the search, it needs to expand more node than would be necessary.
+
+\subsection*{Transposition Table}
+When searching the game tree, many game states will occur multiple times. In order to avoid those repetitions, transposition tables can be used. They save the \emph{value} of node at a specific \emph{depth}, and whether that value is an \emph{upper/lower bound}, or an \emph{exact value}~\cite{Marsland1995}.
+
+I used a \texttt{QCache} for the transposition table with a 64-bit Zobrist-Hash as the key. \texttt{QCache} has the advantage over \texttt{QHash} in that it automatically removes the least accessed entries first and destroys the objects. However, it came to my attention that it didn't allocate the hashmap properly in advance and therefore wastes time expanding the map when it is close to filling up.
+
+\subsection*{Move Ordering}
+The performance of alpha--beta pruning is highly dependent on how good the first move is. It is therefore important to search good moves first. Move ordering takes care of this. It uses the score of previous iterations to order the moves so that pruning can take place early.
+
+The current implementation of move ordering required a lot of copying moves, which took a long time. At the time of writing, move ordering actually reduced the speed of \emph{alpha--beta}.
+
+\subsection*{Quiescence Search}
+As mentioned previously, Hexdame has variable branching factor. When a move is forced it might be interesting to search this node deeper to avoid the horizon effect of not searching for enough when the board changes a lot. Quiescence search can handle this, a node said to be \emph{not quiet} will be searched deeper at a low computational cost, since the branching factor for that node was low.
+
+\subsection*{Iterative Deepening}
+Often games are limited in the time they are allowed to compute the next move, a human opponent will not want to wait more than a few seconds for the computer to make his move. However, it is in the AIs best interest to search as deep as possible in the game tree. Setting a fixed depth which is too shallow will be fast but not good enough, a deep search will take to long. \emph{Iterative deepening} is a technique which will first do an \emph{alpha--beta search} with depth $1$, and start another search with increased depth only if there is enough time to finish it in a given time frame.
+
+\subsection*{MTD(f)}
+\texttt{MTD(f)} is part of the \emph{Memory-enhanced Test} framework which performs multiple null--window alpha--beta searches, and moves the window according to whether the alpha--beta search failed high or low \cite{Plaat1996}. \texttt{MTD(f)} specifically uses the values of previous iterations to approximate the null--window. In their paper, Plaat~et~al.~\cite{Plaat1996} claim that it out-performs NegaScout enhanced with aspiration window in all contexts.
+
+\section{Results}
+As mentioned in the previous section, some of the presented optimisation have not been implemented yet. The results are given with bitboard, negamax with alpha--beta pruning and transposition tables implemented.
+
+The PC used for this test is a AMD Phenom II X6 with 6 cores at \texttt{3.2GHz} and \texttt{20GiB} of RAM. Note however that the game only uses one core and the memory footprint has never been higher than \texttt{1GiB}.
+\\
+\\
+On average my implementation of the negamax search with alpha--beta pruning and transposition tables of depth 8 will search $600k$ nodes in about 1 minute, which results in $10k$ nodes per second.
+
+\section{Future Research}
+Implementing the rest of the mentioned optimisation will hopefully increase the search depth considerably. The current bottleneck is probably the move generation, which will require some additional work to generate moves in bitboard format instead of the current xy-coordinates. This should also improve the performance of move ordering.
+
+Quiescence search will allow for deeper searches when a move has been forced on a player. And iterative deepening as well as MTD(f) will help to better control how long the algorithm is allowed to compute the next move.
+
+Other possible improvements include parallelising the search algorithm in order to use multiple processors found on many current computers. However, this might prove to be a challenge since the transposition table noods to be shared between threads and the transposition table entries are not atomic, resulting in dirty reads when one thread is reading part of an entry while another writes the other part. One solution to this is using locks, but these defeat the purpose of parallel programming; another lock-less approach has been presented by Hyatt~\cite{Hyatt2002}.
 
 \section{Conclusion}
+The implementation is not yet ideal and probably doesn't stand a chance in the competition. Given enough time to implement the remaining optimisations however, this program should have a fair chance competing against others.
 
-\bibliographystyle{acm}
 \bibliography{/mnt/Skaro/papers/library,cite}
 
 \end{document}
