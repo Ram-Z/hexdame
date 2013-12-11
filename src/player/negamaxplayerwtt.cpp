@@ -56,7 +56,7 @@ NegaMaxPlayerWTt::play()
     int bestValue = INT_MIN;
     QList<Move> bestMoves;
     QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
-    int depth = 5;
+    int depth = 6;
     foreach (auto m, moves.values()) {
         foreach (Move mm, m.values()) {
             if (abort) return;

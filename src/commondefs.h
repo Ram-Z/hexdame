@@ -91,17 +91,4 @@ struct Move {
 };
 Q_DECLARE_METATYPE(Move)
 
-struct MoveBit {
-    quint64 path;
-    quint64 taken;
-
-    inline bool empty() const { return !path; }
-    bool operator==(const MoveBit &m) const {
-        return path == m.path && taken == m.taken;
-    }
-
-    friend QDebug operator<<(QDebug dbg, const MoveBit &move);
-};
-Q_DECLARE_METATYPE(MoveBit)
-
 #endif // COMMONDEFS_H

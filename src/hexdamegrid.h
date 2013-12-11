@@ -65,7 +65,6 @@ public:
 
     Color winner() const;
     QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
-    QList<MoveBit> computeValidMoveBits(Color col);
 
     quint64 zobristHash() const { return _zobrist_hash; }
 
@@ -73,10 +72,8 @@ public:
 
 private:
     void dfs(const Coord &from, Move move = Move());
-    void dfs(const quint8 &idx, MoveBit move = MoveBit());
     void kingPiece(Coord c);
 
-    static bool initialized;
     static const int SIZE = 9;
     static void zobristInit();
     static quint64 zobristString(const Coord &c, const Piece &p);
@@ -90,7 +87,6 @@ private:
     quint64 _kings = 0;
 
     QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
-    QList<MoveBit> _validMoveBits;
     quint8 _maxTaken;
 
     quint8 _cntWhite = 0;
