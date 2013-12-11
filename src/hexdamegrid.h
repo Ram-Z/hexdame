@@ -22,9 +22,13 @@
 
 #include "commondefs.h"
 
+#include <bitset>
+
 #include <QVector>
 
 using namespace Hexdame;
+
+typedef std::bitset<61> BitBoard;
 
 class HexdameGrid
 {
@@ -37,27 +41,29 @@ public:
     Piece at(const Coord &c) const;
     void set(const Coord &c, Piece p);
 
-    QList<Coord> coords() const { return _coordToIdx.keys(); }
-    bool contains(const Coord &c) const { return _coordToIdx.contains(c); }
+    static QList<Coord> coords() { return _coordToIdx.keys(); }
+    static bool contains(const Coord &c) { return _coordToIdx.contains(c); }
 
     const QHash<Coord, QMultiHash<Coord, Move>> &validMoves() const { return _validMoves; }
     const QMultiHash<Coord, Move> validMoves(Coord c) const { return _validMoves.value(c); }
 
     // convenience functions
-    inline bool isWhite(const Coord &c) const
-        { return _white & (1ULL << _coordToIdx[c]); }
-    inline bool isBlack(const Coord &c) const
-        { return _black & (1ULL << _coordToIdx[c]); }
-    inline bool isEmpty(const Coord &c) const
-        { return !((_white | _black) & (1ULL << _coordToIdx[c])); }
-    inline bool  isPawn(const Coord &c) const
-        { return ((_white | _black) & ~_kings) & (1ULL << _coordToIdx[c]); }
-    inline bool  isKing(const Coord &c) const
-        { return _kings & (1ULL << _coordToIdx[c]); }
-    inline Color  color(const Coord &c) const
-        { if (isWhite(c)) return White;
-          if (isBlack(c)) return Black;
+    inline bool isWhite(quint8 idx) const { return _white.test(idx); }
+    inline bool isBlack(quint8 idx) const { return _black.test(idx); }
+    inline bool isEmpty(quint8 idx) const { return !(_white | _black).test(idx); }
+    inline bool  isPawn(quint8 idx) const { return ((_white | _black) & ~_kings).test(idx); }
+    inline bool  isKing(quint8 idx) const { return _kings.test(idx); }
+    inline Color  color(quint8 idx) const
+        { if (isWhite(idx)) return White;
+          if (isBlack(idx)) return Black;
           return None; }
+
+    inline bool isWhite(const Coord &c) const { return isWhite(_coordToIdx[c]); }
+    inline bool isBlack(const Coord &c) const { return isBlack(_coordToIdx[c]); }
+    inline bool isEmpty(const Coord &c) const { return isEmpty(_coordToIdx[c]); }
+    inline bool  isPawn(const Coord &c) const { return  isPawn(_coordToIdx[c]); }
+    inline bool  isKing(const Coord &c) const { return  isKing(_coordToIdx[c]); }
+    inline Color  color(const Coord &c) const { return   color(_coordToIdx[c]); }
 
     void makeMove(const Move &move, bool partial = false);
     // does not check validity and calculates all valid moves, use for debug
@@ -85,14 +91,15 @@ private:
     quint64 _zobrist_hash;
 
 
-    quint64 _white = 0;
-    quint64 _black = 0;
-    quint64 _kings = 0;
+    BitBoard _white = 0;
+    BitBoard _black = 0;
+    BitBoard _kings = 0;
 
     QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
     QList<MoveBit> _validMoveBits;
     quint8 _maxTaken;
 
+    // do I still need to count? _white == 0 => black wins
     quint8 _cntWhite = 0;
     quint8 _cntBlack = 0;
 };
