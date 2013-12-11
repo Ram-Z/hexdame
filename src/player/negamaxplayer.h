@@ -41,6 +41,8 @@ protected:
 private:
     int negamax(const HexdameGrid& node, int depth, int alpha, int beta, int color);
     int nodeCnt = 0;
+    static int cnt;
+    static int total;
 
     AbstractHeuristic *_heuristic;
 };

@@ -90,7 +90,7 @@ HexdameView::HexdameView(HexdameGame *game, QWidget *parent)
         coordToPiece[c] = p;
 
 #if 1   // add text coords
-        QGraphicsTextItem *t = new QGraphicsTextItem(QString("{%1,%2}").arg(c.x).arg(c.y), h);
+        QGraphicsTextItem *t = new QGraphicsTextItem(QString("{%1,%2}\n%3").arg(c.x).arg(c.y).arg(game->grid()._coordToIdx.value(c)), h);
         t->setZValue(1);
         t->rotate(180);
 #endif

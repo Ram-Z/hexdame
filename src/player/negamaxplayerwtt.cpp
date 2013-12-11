@@ -32,8 +32,9 @@ NegaMaxPlayerWTt::NegaMaxPlayerWTt(HexdameGame *game, Color color, AbstractHeuri
     : AbstractPlayer(AI, game, color)
     , _heuristic(heuristic)
 {
-    qsrand(QTime::currentTime().second());
-    ttable.setMaxCost(50000000);
+    //FIXME this does not prealocate the underlying hashtable :@
+    // do I really need to subclass QCache?
+    ttable.setMaxCost(500000000);
 }
 
 NegaMaxPlayerWTt::~NegaMaxPlayerWTt()
@@ -54,35 +55,36 @@ NegaMaxPlayerWTt::play()
     tic.start();
     nodeCnt = 0;
     int bestValue = INT_MIN;
-    QList<Move> bestMoves;
-    QHash<Coord, QMultiHash<Coord, Move>> moves = _game->grid().validMoves();
+    QList<MoveBit> bestMoves;
+    QList<MoveBit> moves = _game->grid().computeValidMoveBits(_color);
     int depth = 5;
-    foreach (auto m, moves.values()) {
-        foreach (Move mm, m.values()) {
-            if (abort) return;
+    foreach (MoveBit m, moves) {
+        if (abort) return;
 
-            nodeCnt++;
-            HexdameGrid child(_game->grid());
-            child.makeMove(mm);
-            int val = -negamax(child, depth - 1, -INT_MAX, INT_MAX, -_color);
+        nodeCnt++;
+        HexdameGrid child(_game->grid());
+        child.makeMoveBit(m);
+        int val = -negamax(child, depth - 1, -INT_MAX, INT_MAX, -_color);
 
-            if (bestValue <= val) {
-                if (bestValue < val) {
-                    bestValue = val;
-                    bestMoves.clear();
-                }
-                bestMoves << mm;
+        if (bestValue <= val) {
+            if (bestValue < val) {
+                bestValue = val;
+                bestMoves.clear();
             }
+            bestMoves << m;
         }
     }
     qDebug("%10s %5s %2d %8d %10d", "NMPwTt", _color == White ? "white" : "black", depth, nodeCnt, tic.elapsed());
+    qDebug() << ttable.totalCost() << ttable.maxCost();
 
-    emit move(bestMoves.at(qrand() % bestMoves.size()));
+    qDebug() << bestMoves.size();
+    emit moveBit(bestMoves.at(qrand() % bestMoves.size()));
 }
 
 int
 NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int beta, int color)
 {
+    // return an actuall score +-INF or alpha/beta bounds
     if (abort) return 0x42;
 
     nodeCnt++;
@@ -111,23 +113,18 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
 
     int bestValue = INT_MIN;
 
-    QHash<Coord, QMultiHash<Coord, Move>> moves = node.validMoves();
-    Move mm;
-    foreach (auto m, moves.values()) {
-        foreach (mm, m.values()) {
-            HexdameGrid child(node);
-            child.makeMove(mm);
-            int val = -negamax(child, depth-1, -beta, -alpha, -color);
-            bestValue = qMax(bestValue, val);
-            alpha = qMax(alpha, val);
-            if (alpha >= beta) break;
-        }
+    QList<MoveBit> moves = node.computeValidMoveBits((Color) color);
+    foreach (MoveBit m, moves) {
+        HexdameGrid child(node);
+        child.makeMoveBit(m);
+        int val = -negamax(child, depth-1, -beta, -alpha, -color);
+        bestValue = qMax(bestValue, val);
+        alpha = qMax(alpha, val);
         if (alpha >= beta) break;
     }
 
     TTentry *new_ttentry = new TTentry();
     new_ttentry->value = bestValue;
-    new_ttentry->move = mm; //FIXME not the best move
     new_ttentry->zobrist_key = node.zobristHash();
     if (bestValue <= alphaOrig) {
         new_ttentry->flag = FLAG_UPPER;
@@ -145,5 +142,6 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
 void
 NegaMaxPlayerWTt::run()
 {
+    qsrand(QDateTime::currentMSecsSinceEpoch());
     play();
 }

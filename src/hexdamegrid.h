@@ -22,13 +22,9 @@
 
 #include "commondefs.h"
 
-#include <bitset>
-
 #include <QVector>
 
 using namespace Hexdame;
-
-typedef std::bitset<61> BitBoard;
 
 class HexdameGrid
 {
@@ -38,7 +34,9 @@ public:
     HexdameGrid &operator=(const HexdameGrid &other);
     bool operator==(const HexdameGrid &other) const;
 
-    Piece at(const Coord &c) const;
+    Piece at(quint8 idx) const;
+
+    Piece at(const Coord &c) const { return at(_coordToIdx.value(c)); }
     void set(const Coord &c, Piece p);
 
     static QList<Coord> coords() { return _coordToIdx.keys(); }
@@ -66,25 +64,36 @@ public:
     inline Color  color(const Coord &c) const { return   color(_coordToIdx[c]); }
 
     void makeMove(const Move &move, bool partial = false);
+    void makeMoveBit(const MoveBit &move);
     // does not check validity and calculates all valid moves, use for debug
     void move(const Coord &from, const Coord &to);
 
     Color winner() const;
     QHash<Coord, QMultiHash<Coord, Move>> computeValidMoves(Color col);
-    QList<MoveBit> computeValidMoveBits(Color col);
+    QList<MoveBit> computeValidMoveBits(Color col) const;
 
     quint64 zobristHash() const { return _zobrist_hash; }
 
     static QHash<Coord, quint8> _coordToIdx;
 
 private:
+    enum Direction {
+        NorthWest = 0,
+        North,
+        NorthEast,
+        SouthEast,
+        South,
+        SouthWest
+    };
+
     void dfs(const Coord &from, Move move = Move());
-    void dfs(const quint8 &idx, MoveBit move = MoveBit());
-    void kingPiece(Coord c);
+    void dfs(const quint8 &from, MoveBit move = MoveBit()) const;
+    void kingPiece();
 
     static bool initialized;
     static const int SIZE = 9;
     static void zobristInit();
+    static quint64 zobristString(quint8 idx, const Piece &p);
     static quint64 zobristString(const Coord &c, const Piece &p);
     static quint64 _zobrist_idx[61][4];
     static quint64 _zobrist_turn;
@@ -96,12 +105,15 @@ private:
     BitBoard _kings = 0;
 
     QHash<Coord, QMultiHash<Coord, Move>> _validMoves;
-    QList<MoveBit> _validMoveBits;
-    quint8 _maxTaken;
+    mutable QList<MoveBit> _validMoveBits;
+    mutable quint8 _maxTaken;
 
-    // do I still need to count? _white == 0 => black wins
-    quint8 _cntWhite = 0;
-    quint8 _cntBlack = 0;
+    static void moveInit();
+    static BitBoard _neighbourMasks[61];
+    static BitBoard _northMasks[61];
+    static BitBoard _southMasks[61];
+    static BitBoard _pawnJumpMasks[61][6];
+    static BitBoard _kingJumpMasks[61][6];
 };
 
 #endif // HEXDAMEGRID_H

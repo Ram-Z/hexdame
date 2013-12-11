@@ -29,6 +29,7 @@ HexdameGame::HexdameGame(QObject *parent)
 {
     connect(this, SIGNAL(playerMoved()), SLOT(startNextTurn()));
     qRegisterMetaType<Move>("Move");
+    qRegisterMetaType<MoveBit>("MoveBit");
 }
 
 bool
@@ -69,6 +70,16 @@ HexdameGame::makeMove(const Coord &from, const Coord &to)
 
     Move move = _grid.validMoves(from).value(to);
     makeMove(move);
+}
+
+void
+HexdameGame::makeMove(const MoveBit &move)
+{
+    if (move.empty()) return;
+
+    _grid.makeMoveBit(move);
+    emit boardChanged();
+    emit playerMoved();
 }
 
 void
@@ -126,11 +137,13 @@ HexdameGame::setBlackPlayer(AbstractPlayer *player)
 {
     if (_black) {
         disconnect(_black, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+        disconnect(_black, SIGNAL(moveBit(MoveBit)), this, SLOT(makeMove(MoveBit)));
         _black->deleteLater();
     }
     _black = player;
     if (_black) {
         connect(_black, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+        connect(_black, SIGNAL(moveBit(MoveBit)), this, SLOT(makeMove(MoveBit)));
     }
     if (currentColor() == Black)
         _black->start();
@@ -141,11 +154,13 @@ HexdameGame::setWhitePlayer(AbstractPlayer *player)
 {
     if (_white) {
         disconnect(_white, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+        disconnect(_white, SIGNAL(moveBit(MoveBit)), this, SLOT(makeMove(MoveBit)));
         _white->deleteLater();
     }
     _white = player;
     if (_white) {
         connect(_white, SIGNAL(move(Move)), this, SLOT(makeMove(Move)));
+        connect(_white, SIGNAL(moveBit(MoveBit)), this, SLOT(makeMove(MoveBit)));
     }
     if (currentColor() == White)
         _white->start();

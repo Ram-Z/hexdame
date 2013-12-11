@@ -27,6 +27,13 @@
 QHash<Coord, quint8> HexdameGrid::_coordToIdx;
 quint64 HexdameGrid::_zobrist_idx[61][4];
 quint64 HexdameGrid::_zobrist_turn;
+
+BitBoard HexdameGrid::_neighbourMasks[61];
+BitBoard HexdameGrid::_northMasks[61];
+BitBoard HexdameGrid::_southMasks[61];
+BitBoard HexdameGrid::_pawnJumpMasks[61][6];
+BitBoard HexdameGrid::_kingJumpMasks[61][6];
+
 bool HexdameGrid::initialized = false;
 
 HexdameGrid::HexdameGrid()
@@ -47,11 +54,9 @@ HexdameGrid::HexdameGrid()
                 if (x < s && y < s) {
                     _white.set(idx);
                     _zobrist_hash ^= _zobrist_idx[idx][2];
-                    _cntWhite++;
                 } else if (x > s && y > s) {
                     _black.set(idx);
                     _zobrist_hash ^= _zobrist_idx[idx][1];
-                    _cntBlack++;
                 }
                 idx++;
             }
@@ -60,17 +65,15 @@ HexdameGrid::HexdameGrid()
 
     if (!initialized) {
         _coordToIdx.squeeze();
+        moveInit();
+        initialized = true;
     }
-
-    computeValidMoves(White);
 }
 
 HexdameGrid::HexdameGrid(const HexdameGrid &other)
     : _white(other._white)
     , _black(other._black)
     , _kings(other._kings)
-    , _cntWhite(other._cntWhite)
-    , _cntBlack(other._cntBlack)
     , _validMoves(other._validMoves)
     , _maxTaken(other._maxTaken)
     , _zobrist_hash(other._zobrist_hash)
@@ -85,8 +88,6 @@ HexdameGrid::operator=(const HexdameGrid &other)
         _white = other._white;
         _black = other._black;
         _kings = other._kings;
-        _cntWhite = other._cntWhite;
-        _cntBlack = other._cntBlack;
         _validMoves = other._validMoves;
         _maxTaken = other._maxTaken;
         _zobrist_hash = other._zobrist_hash;
@@ -103,10 +104,8 @@ HexdameGrid::operator==(const HexdameGrid &other) const
 }
 
 Piece
-HexdameGrid::at(const Coord& c) const
+HexdameGrid::at(quint8 idx) const
 {
-    quint8 idx = _coordToIdx.value(c);
-
     if (_kings.test(idx))
         return _white.test(idx) ? WhiteKing : BlackKing;
     if (_white.test(idx)) return WhitePawn;
@@ -135,16 +134,16 @@ Color
 HexdameGrid::winner() const
 {
     //TODO check for draws
-    if (_cntBlack == 0)
+    if (_black.none())
         return White;
-    if (_cntWhite == 0)
+    if (_white.none())
         return Black;
 
     return None;
 }
 
 void
-HexdameGrid::kingPiece(Coord c)
+HexdameGrid::kingPiece()
 {
     static const BitBoard white(0x1f82040400000000ULL);
     static const BitBoard black(0x000000000404083fULL);
@@ -153,43 +152,36 @@ HexdameGrid::kingPiece(Coord c)
     if (mask.any()) {
         _kings |= mask;
 
-        // use this while I still pass a Coord
-        _zobrist_hash ^= zobristString(c, BlackPawn);
-        _zobrist_hash ^= zobristString(c, BlackKing);
-        return;
+//        // use this while I still pass a Coord
+//        _zobrist_hash ^= zobristString(c, BlackPawn);
+//        _zobrist_hash ^= zobristString(c, BlackKing);
+//        return;
 
         // use this if for some reason I don't pass a Coord anymore
-//        quint8 idx = 0;
-//        // is this really faster?
-//        while (idx < 26 && !(mask & 1)) {
-//            ++idx;
-//            mask >>= 1;
-//        }
-//        _zobrist_hash ^= _zobrist_idx[idx][0]; //blackKing
-//        _zobrist_hash ^= _zobrist_idx[idx][1]; //blackPawn
-//        return;
+        quint8 idx = 0;
+        // is this really faster?
+        while (idx < 26 && !mask[idx]) ++idx;
+        _zobrist_hash ^= _zobrist_idx[idx][0]; //blackKing
+        _zobrist_hash ^= _zobrist_idx[idx][1]; //blackPawn
+        return;
     }
 
     mask = _white & white;
     if (mask.any()) {
         _kings |= mask;
 
-        // use this while I still pass a Coord
-        _zobrist_hash ^= zobristString(c, WhitePawn);
-        _zobrist_hash ^= zobristString(c, WhiteKing);
-        return;
+//        // use this while I still pass a Coord
+//        _zobrist_hash ^= zobristString(c, WhitePawn);
+//        _zobrist_hash ^= zobristString(c, WhiteKing);
+//        return;
 
         // use this if for some reason I don't pass a Coord anymore
-//        quint8 idx = 34;
-//        mask >>= idx;
-//        // is this really faster?
-//        while (idx < 61 && !(mask & 1)) {
-//            ++idx;
-//            mask >>= 1;
-//        }
-//        _zobrist_hash ^= _zobrist_idx[idx][2]; //whitePawn
-//        _zobrist_hash ^= _zobrist_idx[idx][3]; //whiteKing
-//        return;
+        quint8 idx = 34;
+        // is this really faster?
+        while (idx < 61 && !mask[idx]) ++idx;
+        _zobrist_hash ^= _zobrist_idx[idx][2]; //whitePawn
+        _zobrist_hash ^= _zobrist_idx[idx][3]; //whiteKing
+        return;
     }
 }
 
@@ -205,11 +197,6 @@ HexdameGrid::makeMove(const Move &move, bool partial)
     }
 
     foreach (Coord c, move.taken) {
-        if (color(c) == Black) {
-            _cntBlack--;
-        } else if (color(c) == White) {
-            _cntWhite--;
-        }
         _zobrist_hash ^= zobristString(c, at(c));
         set(c, Empty);
     }
@@ -219,13 +206,53 @@ HexdameGrid::makeMove(const Move &move, bool partial)
         _maxTaken = 0;
         dfs(move.to());
     } else {
-        kingPiece(move.to());
+        kingPiece();
         _zobrist_hash ^= _zobrist_turn;
         if (color(move.to()) == White)
             computeValidMoves(Black);
         if (color(move.to()) == Black)
             computeValidMoves(White);
     }
+}
+
+void
+HexdameGrid::makeMoveBit(const MoveBit &move)
+{
+    Q_ASSERT(move.path.count() == 2);
+    Piece p;
+    quint8 from, to;
+    for (int i = 0; i < 61; ++i) {
+        if (move.path[i]) {
+             if (at(i) != Empty) {
+                 from = i;
+                 p = at(i);
+             } else {
+                 to = i;
+             }
+        }
+        if (move.taken[i]) _zobrist_hash ^= zobristString(i, at(i));
+    }
+    _zobrist_hash ^= zobristString(from, p);
+    _zobrist_hash ^= zobristString(to, p);
+
+    if ((_white & move.path).any()) {
+        _white ^= move.path;
+        _black &= ~move.taken;
+    } else {
+        _black ^= move.path;
+        _white &= ~move.taken;
+    }
+    if ((_kings & move.path).any()) {
+        _kings ^= move.path;
+    }
+    _kings &= ~move.taken;
+
+    kingPiece();
+    _zobrist_hash ^= _zobrist_turn;
+   // if (color(p) == White)
+   //     computeValidMoves(Black);
+   // if (color(p) == Black)
+   //     computeValidMoves(White);
 }
 
 void
@@ -267,9 +294,9 @@ HexdameGrid::computeValidMoves(Color col)
     if (!_validMoves.empty()) return _validMoves;
 
     if (col == White)
-        _validMoves.reserve(2*_cntWhite);
+        _validMoves.reserve(2*_white.count());
     else if (col == Black)
-        _validMoves.reserve(2*_cntBlack);
+        _validMoves.reserve(2*_black.count());
 
     // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
     const static QList<Coord> l{Coord(1,0), Coord(0,1), Coord(1,1), Coord(0,-1), Coord(-1,0), Coord(-1,-1)};
@@ -299,55 +326,51 @@ HexdameGrid::computeValidMoves(Color col)
 }
 
 QList<MoveBit>
-HexdameGrid::computeValidMoveBits(Color col)
+HexdameGrid::computeValidMoveBits(Color col) const
 {
     _maxTaken = 0;
-    _validMoves.clear();
+    _validMoveBits.clear();
 
     if (col == None) {
         QList<MoveBit> meh;
-        meh.append(computeValidMoves(White));
-        meh.append(computeValidMoves(Black));
-        _validMoves = meh;
-        return _validMoves;
+        meh.append(computeValidMoveBits(White));
+        meh.append(computeValidMoveBits(Black));
+        _validMoveBits = meh;
+        return _validMoveBits;
     }
 
     for (int i = 0; i < 61; ++i) {
+        if (color(i) != col) continue;
         dfs(i);
     }
 
     if (!_validMoveBits.empty()) return _validMoveBits;
 
     if (col == White)
-        _validMoves.reserve(2*_cntWhite);
+        _validMoveBits.reserve(2*_white.count());
     else if (col == Black)
-        _validMoves.reserve(2*_cntBlack);
+        _validMoveBits.reserve(2*_black.count());
 
-    // don't change the order  |<----------Whites moves---------->|<-------------Blacks moves------------->|
-    const static QList<Coord> l{Coord(1,0), Coord(0,1), Coord(1,1), Coord(0,-1), Coord(-1,0), Coord(-1,-1)};
-    foreach(Coord from, coords()) {
+    for (int from = 0; from < 61; ++from) {
         if (color(from) != col) continue;
-        for (int i = 0; i < l.size(); ++i) {
-            if (i <  3 && isPawn(from) && isBlack(from)) i = 3; // jump to Blacks moves
-            if (i >= 3 && isPawn(from) && isWhite(from)) break; // ignore the rest
 
-            for (int j = 1; j < 9; ++j) {
-                Coord to = from + j*l.at(i);
+        BitBoard dests;
+        if (col == White) {
+            dests = ~(_white | _black) & _northMasks[from];
+        } else {
+            dests = ~(_white | _black) & _southMasks[from];
+        }
 
-                if (!contains(to)) break;
-                if (!isEmpty(to)) break;
-
-                // create Move and add to list
-                Move m;
-                m.path << from << to;
-                _validMoves[from].insert(to, m);
-
-                if (isPawn(from)) break; // Pawns can't jump further than 1
-            }
+        for (int to = 0; to < 61; ++to) {
+            if (!dests[to]) continue;
+            MoveBit m;
+            m.path.set(from);
+            m.path.set(to);
+            _validMoveBits << m;
         }
     }
 
-    return _validMoves;
+    return _validMoveBits;
 }
 
 void
@@ -406,56 +429,120 @@ HexdameGrid::dfs(const Coord &from, Move move)
 }
 
 void
-HexdameGrid::dfs(const quint8 &from, MoveBit move)
+HexdameGrid::dfs(const quint8 &from, MoveBit move) const
 {
     static Color col;
     static bool king;
     if (move.empty()) {
-        move.path = 1ULL << from;
+        move.path.set(from);
         col = color(from);
         king = isKing(from);
     }
 
-    const static QList<Coord> l{Coord(1,0), Coord(-1,0), Coord(0,1), Coord(0,-1), Coord(1,1), Coord(-1,-1)};
-    foreach (Coord lv, l) {
-        for (int i = 1; i < 9; ++i) {
-            Coord over = from + i*lv;
+    const BitBoard &cur = col == White ? _white : _black;
+    const BitBoard &opp = col == White ? _black : _white;
 
-            if (!contains(over)) break;           // not on the grid
-            if (col == color(over)) break;        // same colour
-            if (move.taken.contains(over)) break; // already took piece
 
-            if (col == -color(over)) {
-                while (++i < 9) {
-                    Coord to = from + i*lv;
-                    // non-empty cell after jumping
-                    if (!contains(to) || (move.from() != to && !isEmpty(to))) { i = 9; break; }
+    if (!king) {
+        // may not jump
+        if ((opp & _neighbourMasks[from]).none()) return;
 
-                    // create a new Move
-                    Move newMove(move);
-                    newMove.taken << over;
-                    newMove.path << to;
-
-                    // update/reset validMoves list
-                    if (newMove.taken.size() >= _maxTaken) {
-                        if (newMove.taken.size() > _maxTaken) {
-                            _validMoves.clear();
-                            _maxTaken = newMove.taken.size();
-                        }
-                        bool dup = false;
-                        foreach (Move oldMove, _validMoves.value(move.from())) {
-                            if (dup = oldMove == newMove) break; // moves are equivalent
-                        }
-                        if (!dup) _validMoves[newMove.from()].insert(to, newMove);
-                    }
-
-                    // recursive call
-                    dfs(to, newMove);
-
-                    if (!king) break; // Pawns can't jump further than 1
-                }
+        for (int d = 0; d < 6; ++d) {
+            if ((opp & _pawnJumpMasks[from][d]).none()) continue; // can't jump in direction d
+            if ((move.taken & _pawnJumpMasks[from][d]).any()) continue; // already took piece
+            size_t to = 0;
+            {
+                BitBoard tmp = _pawnJumpMasks[from][d] & ~_neighbourMasks[from];
+                while (!(tmp).test(to)) ++to;
             }
-            if (!king) break; // Pawns can't jump further than 1
+            if ((cur | opp).test(to)) continue; // dest is not free
+
+            MoveBit newMove(move);
+            // reset from only if we're in a multi-jump
+            if (newMove.path.count() == 2)
+                newMove.path.reset(from);
+            newMove.path.set(to);
+            newMove.taken |= _pawnJumpMasks[from][d] & _neighbourMasks[from];
+            Q_ASSERT(newMove.path.count() == 2);
+
+            size_t s = newMove.taken.count();
+            if (s >= _maxTaken) {
+                if (s > _maxTaken) {
+                    _validMoveBits.clear();
+                    _maxTaken = s;
+                }
+                if(!_validMoveBits.contains(newMove))
+                    _validMoveBits << newMove;
+            }
+
+            dfs(to, newMove);
+        }
+    } else {
+        for (int d = 0; d < 6; ++d) {
+            if ((opp & _kingJumpMasks[from][d]).none()) continue; // can't jump in direction d
+
+            BitBoard dests;
+            quint8 takenIdx = -1;
+
+            quint8 t_min, t_max, t_inc;
+            if (d < 3) { // going North
+                t_min = 0;
+                t_max = 61;
+                t_inc = 1;
+            } else { // going South
+                t_min = 60;
+                t_max = -1;
+                t_inc = -1;
+            }
+
+            bool canJump = false;
+            quint8 t = t_min;
+            // I don't like this loop
+            while (t != t_max) {
+                if ((cur & _kingJumpMasks[from][d]).test(t)) break;
+
+                if (canJump && _kingJumpMasks[from][d].test(t)) {
+                    if (isEmpty(t))
+                        dests.set(t);
+                    else
+                        break;
+                }
+
+                if ((opp & _kingJumpMasks[from][d]).test(t)) {
+                    canJump = true;
+                    takenIdx = t;
+                }
+
+                t+=t_inc;
+            }
+
+            if (takenIdx > 60) continue; // we're trying to jump out of the board
+
+            if (move.taken.test(takenIdx)) continue; // already took piece
+            size_t to = 0;
+            for (int to = 0; to < 61; ++to) {
+                if (!dests.test(to)) continue;
+
+                MoveBit newMove(move);
+                // reset from only if we're in a multi-jump
+                if (newMove.path.count() == 2)
+                    newMove.path.reset(from);
+                newMove.path.set(to);
+                newMove.taken.set(takenIdx);
+                Q_ASSERT(newMove.path.count() == 2);
+
+                size_t s = newMove.taken.count();
+                if (s >= _maxTaken) {
+                    if (s > _maxTaken) {
+                        _validMoveBits.clear();
+                        _maxTaken = s;
+                    }
+                    if(!_validMoveBits.contains(newMove))
+                        _validMoveBits << newMove;
+                }
+
+                dfs(to, newMove);
+            }
         }
     }
 }
@@ -477,6 +564,22 @@ HexdameGrid::zobristInit()
 }
 
 quint64
+HexdameGrid::zobristString(quint8 idx, const Piece& p)
+{
+    Q_ASSERT(p != Empty);
+    int j;
+
+    switch (p) {
+        case BlackKing: j = 0; break;
+        case BlackPawn: j = 1; break;
+        case WhitePawn: j = 2; break;
+        case WhiteKing: j = 3; break;
+    }
+
+    return _zobrist_idx[idx][j];
+}
+
+quint64
 HexdameGrid::zobristString(const Coord& c, const Piece& p)
 {
     int i = _coordToIdx.value(c);
@@ -490,4 +593,58 @@ HexdameGrid::zobristString(const Coord& c, const Piece& p)
     }
 
     return _zobrist_idx[i][j];
+}
+
+
+void print(BitBoard grid) {
+    qDebug() << QString::number(grid.to_ullong(), 2).rightJustified(64, '0');
+    QString str;
+    for (int i = 63; i >= 0; --i) {
+        if (i % 10 == 0)
+            str += QString::number(i/10);
+        else
+            str += QString::number(i%10);
+    }
+    qDebug() << str;
+}
+
+void
+HexdameGrid::moveInit()
+{
+    // don't change order:     |<-NorthWest->|<---North--->|<-NorthEast->|<-SouthEast->|<---South--->|<-SouthWest->|
+    const static QList<Coord> l{Coord( 1, 0), Coord( 1, 1), Coord( 0, 1), Coord( 0,-1), Coord(-1,-1), Coord(-1, 0)};
+    foreach (Coord d, _coordToIdx.keys()) {
+        quint8 idx = _coordToIdx.value(d);
+        qDebug() << "idx: " << idx;
+        for (int c = 0; c < l.size(); ++c) {
+            Coord one = d + 1*l.at(c);
+            if (!contains(one)) continue; // not on the grid
+
+            if (c < 3) { // going north
+                _northMasks[idx].set(_coordToIdx.value(one));
+            } else { // going south
+                _southMasks[idx].set(_coordToIdx.value(one));
+            }
+
+            Coord two = d + 2*l.at(c);
+            if (!contains(two)) continue; // not on the grid
+
+            _pawnJumpMasks[idx][c].set(_coordToIdx.value(one));
+            _pawnJumpMasks[idx][c].set(_coordToIdx.value(two));
+
+            _neighbourMasks[idx].set(_coordToIdx.value(one));
+            qDebug() << "c: " << c;
+            print(_pawnJumpMasks[idx][c]);
+
+            _kingJumpMasks[idx][c].set(_coordToIdx.value(one));
+            _kingJumpMasks[idx][c].set(_coordToIdx.value(two));
+            for (int i = 3; i < 9; ++i) {
+                Coord next = d + i*l.at(c);
+                if (!contains(next)) break; // not on the grid
+
+                _kingJumpMasks[idx][c].set(_coordToIdx.value(next));
+            }
+        }
+        print(_neighbourMasks[idx]);
+    }
 }
