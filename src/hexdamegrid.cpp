@@ -228,8 +228,10 @@ HexdameGrid::makeMoveBit(const MoveBit &move)
         }
         if (move.taken[i]) _zobrist_hash ^= zobristString(i, at(i));
     }
-    _zobrist_hash ^= zobristString(from, p);
-    _zobrist_hash ^= zobristString(to, p);
+    if (move.path.any()) {
+        _zobrist_hash ^= zobristString(from, p);
+        _zobrist_hash ^= zobristString(to, p);
+    }
 
     if ((_white & move.path).any()) {
         _white ^= move.path;
