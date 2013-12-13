@@ -25,18 +25,18 @@ using namespace Hexdame;
 
 int SomeHeuristic::value(const HexdameGrid &grid, const int &c) const
 {
-    if (grid.winner() ==  c) return  1000;
-    if (grid.winner() == -c) return -1000;
+    if (grid.winner() ==  c) return  100;
+    if (grid.winner() == -c) return -100;
 
     int value = 0;
     foreach (Coord coord, grid.coords()) {
         Piece p = grid.at(coord);
 
-        if (isPawn(p) && color(p) ==  c) value+=10;
-        if (isKing(p) && color(p) ==  c) value+=30;
+        if (isPawn(p) && color(p) ==  c) value+=1;
+        if (isKing(p) && color(p) ==  c) value+=3;
 
-        if (isPawn(p) && color(p) == -c) value-=10;
-        if (isKing(p) && color(p) == -c) value-=30;
+        if (isPawn(p) && color(p) == -c) value-=1;
+        if (isKing(p) && color(p) == -c) value-=3;
 
 //        if (isPawn(p) && color(p) ==  c) value += qAbs(coord.x - coord.y)/2;
 //        if (isPawn(p) && color(p) == -c) value -= qAbs(coord.x - coord.y)/2;
@@ -44,3 +44,25 @@ int SomeHeuristic::value(const HexdameGrid &grid, const int &c) const
     }
     return value;
 }
+
+//int SomeHeuristic::valueWhite(const HexdameGrid &grid) const
+//{
+//    if (grid.winner() ==  White) return  1000;
+//    if (grid.winner() ==  Black) return -1000;
+//
+//    int value = 0;
+//    foreach (Coord coord, grid.coords()) {
+//        Piece p = grid.at(coord);
+//
+//        if (isPawn(p) && color(p) == White) value+=10;
+//        if (isKing(p) && color(p) == White) value+=30;
+//
+//        if (isPawn(p) && color(p) == Black) value-=10;
+//        if (isKing(p) && color(p) == Black) value-=30;
+//
+////        if (isPawn(p) && color(p) ==  c) value += qAbs(coord.x - coord.y)/2;
+////        if (isPawn(p) && color(p) == -c) value -= qAbs(coord.x - coord.y)/2;
+//
+//    }
+//    return value;
+//}

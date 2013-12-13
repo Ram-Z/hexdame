@@ -27,12 +27,14 @@ class AbstractHeuristic
 {
 public:
     virtual int value(const HexdameGrid &grid, const int &c) const = 0;
+    virtual int valueWhite(const HexdameGrid &grid) const { return value(grid, White); }
 };
 
 class SomeHeuristic : public AbstractHeuristic
 {
 public:
     virtual int value(const HexdameGrid &grid, const int &c) const;
+    //virtual int SomeHeuristic::valueWhite(const HexdameGrid &grid) const { return value(grid, White); }
 };
 
 #endif // HEURISTIC_H

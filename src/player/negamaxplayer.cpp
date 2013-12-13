@@ -106,9 +106,9 @@ NegaMaxPlayer::negamax(const HexdameGrid &node, int depth, int alpha, int beta, 
             int val = -negamax(child, depth-1, -beta, -alpha, -color);
             bestValue = qMax(bestValue, val);
             alpha = qMax(alpha, val);
-            //if (alpha >= beta) break;
+            if (alpha >= beta) break;
         }
-        //if (alpha >= beta) break;
+        if (alpha >= beta) break;
     }
     return bestValue;
 }

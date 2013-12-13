@@ -214,7 +214,7 @@ HexdameGrid::makeMove(const Move &move, bool partial)
 void
 HexdameGrid::makeMoveBit(const MoveBit &move)
 {
-    Q_ASSERT(move.path.count() == 2);
+    Q_ASSERT(move.path.count() == 2 || move.path.count() == 0);
     Piece p;
     quint8 from, to;
     for (int i = 0; i < 61; ++i) {
@@ -439,7 +439,7 @@ HexdameGrid::dfs(const quint8 &from, MoveBit move) const
                 newMove.path.reset(from);
             newMove.path.set(to);
             newMove.taken |= _pawnJumpMasks[from][d] & _neighbourMasks[from];
-            Q_ASSERT(newMove.path.count() == 2);
+            Q_ASSERT(newMove.path.count() == 2 || newMove.path.count() == 0);
 
             size_t s = newMove.taken.count();
             if (s >= _maxTaken) {

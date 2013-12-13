@@ -17,7 +17,7 @@
  *
  */
 
-#include "negamaxplayerwtt.h"
+#include "mtdfplayer.h"
 
 #include "heuristic.h"
 #include "hexdamegame.h"
@@ -27,8 +27,9 @@
 #include <QCoreApplication>
 
 #include <QtDebug>
+#include <QTimer>
 
-NegaMaxPlayerWTt::NegaMaxPlayerWTt(HexdameGame *game, Color color, AbstractHeuristic *heuristic)
+MTDfPlayer::MTDfPlayer(HexdameGame *game, Color color, AbstractHeuristic *heuristic)
     : AbstractPlayer(AI, game, color)
     , _heuristic(heuristic)
 {
@@ -37,7 +38,7 @@ NegaMaxPlayerWTt::NegaMaxPlayerWTt(HexdameGame *game, Color color, AbstractHeuri
     ttable.setMaxCost(500000000);
 }
 
-NegaMaxPlayerWTt::~NegaMaxPlayerWTt()
+MTDfPlayer::~MTDfPlayer()
 {
     delete _heuristic;
 
@@ -49,46 +50,72 @@ NegaMaxPlayerWTt::~NegaMaxPlayerWTt()
 }
 
 void
-NegaMaxPlayerWTt::play()
+MTDfPlayer::play()
 {
     QTime tic;
     tic.start();
     nodeCnt = 0;
-    int bestValue = INT_MIN;
-    QList<MoveBit> bestMoves;
-    QList<MoveBit> moves = _game->grid().computeValidMoveBits(_color);
-    int depth = 4;
-    foreach (MoveBit m, moves) {
-        if (abort) return;
-
-        nodeCnt++;
-        HexdameGrid child(_game->grid());
-        child.makeMoveBit(m);
-        int val = -negamax(child, depth - 1, -INT_MAX, INT_MAX, -_color);
-
-        if (bestValue <= val) {
-            if (bestValue < val) {
-                bestValue = val;
-                bestMoves.clear();
-            }
-            bestMoves << m;
-        }
-    }
-    qDebug("%10s %5s %2d %8d %10d", "NMPwTt", _color == White ? "white" : "black", depth, nodeCnt, tic.elapsed());
+    QList<MoveBit> bestMoves = iterativeDeepening(_game->grid(), tic);
+    qDebug("%10s %5s %2d %8d %10d", "MTDf", _color == White ? "white" : "black", _depth, nodeCnt, tic.elapsed());
     qDebug() << ttable.totalCost() << ttable.maxCost();
 
-    qDebug() << bestMoves.size();
     emit moveBit(bestMoves.at(qrand() % bestMoves.size()));
 }
 
+QList<MoveBit>
+MTDfPlayer::iterativeDeepening(const HexdameGrid& root, QTime tic)
+{
+    static const int MAX_DEPTH = 25;
+
+    QList<MoveBit> bestMoves;
+    int firstguess = 0;
+    for (int d = 0; d <= MAX_DEPTH; ++d) {
+        int bestValue = INT_MIN;
+        QList<MoveBit> moves = root.computeValidMoveBits(_color);
+        foreach (MoveBit m, moves) {
+            nodeCnt++;
+            HexdameGrid child(root);
+            child.makeMoveBit(m);
+
+            firstguess = _color * mtdf(child, _color*firstguess, d);
+
+            if (firstguess >= bestValue) {
+                if (firstguess > bestValue) {
+                    bestValue = firstguess;
+                    bestMoves.clear();
+                }
+                bestMoves << m;
+            }
+        }
+        _depth = d;
+        if (tic.elapsed() >= 6000) break;
+    }
+    return bestMoves;
+}
+
 int
-NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int beta, int color)
+MTDfPlayer::mtdf(const HexdameGrid& node, int f, int depth)
+{
+    int g = f;
+    int upperBound = INT_MAX;
+    int lowerBound = -INT_MAX;
+    while (lowerBound < upperBound) {
+        int beta = g == lowerBound ? g+1 : g;
+        g = -_color * negamax(node, depth, beta-1, beta, -_color);
+        (g < beta ? upperBound : lowerBound) = g;
+    }
+
+    return g;
+}
+
+int
+MTDfPlayer::negamax(const HexdameGrid &node, int depth, int alpha, int beta, int color)
 {
     // return an actuall score +-INF or alpha/beta bounds
-    if (abort) return 0x42;
+    //if (abort) return 0x42;
 
-    nodeCnt++;
     int alphaOrig = alpha;
+    nodeCnt++;
 
     TTentry *ttentry = ttable.object(node.zobristHash());
     if (ttentry && ttentry->depth >= depth) {
@@ -104,21 +131,30 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
             if (alpha >= beta)
                 return ttentry->value;
         } else {
-            qDebug() << "COLLISION";
+            qWarning() << "COLLISION";
         }
     }
+
     if (depth == 0 || node.winner() != None) {
         return _heuristic->value(node, color);
     }
 
     int bestValue = INT_MIN;
+    MoveBit bestMove;
 
     QList<MoveBit> moves = node.computeValidMoveBits((Color) color);
+    // move ordering?
+    if (ttentry) {
+        moves.prepend(ttentry->bestMove);
+    }
     foreach (MoveBit m, moves) {
         HexdameGrid child(node);
         child.makeMoveBit(m);
         int val = -negamax(child, depth-1, -beta, -alpha, -color);
-        bestValue = qMax(bestValue, val);
+        if (val > bestValue) {
+            bestValue = val;
+            bestMove = m;
+        }
         alpha = qMax(alpha, val);
         if (alpha >= beta) break;
     }
@@ -134,14 +170,16 @@ NegaMaxPlayerWTt::negamax(const HexdameGrid &node, int depth, int alpha, int bet
         new_ttentry->flag = FLAG_EXACT;
     }
     new_ttentry->depth = depth;
+    new_ttentry->bestMove = bestMove;
     ttable.insert(node.zobristHash(), new_ttentry);
 
     return bestValue;
 }
 
 void
-NegaMaxPlayerWTt::run()
+MTDfPlayer::run()
 {
+    abort = false;
     qsrand(QDateTime::currentMSecsSinceEpoch());
     play();
 }

@@ -271,12 +271,12 @@ App::loadStatusBar()
 {
     //TODO maybe not use a statusbar for this
     QStatusBar *statusBar = _mainwindow->statusBar();
-    QStringList players{"Human", "Random", "NegaMax", "NegaMaxWTt", "NegaMaxWTtMo"};
+    QStringList players{"Human", "Random", "NegaMax", "NegaMaxWTt", "MTD-f"};
 
     _whiteCombo = new QComboBox();
     statusBar->addPermanentWidget(_whiteCombo);
     _whiteCombo->addItems(players);
-    _whiteCombo->setCurrentIndex(3);
+    _whiteCombo->setCurrentIndex(4);
     connect(_whiteCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(setWhitePlayer(int)));
 
     statusBar->addPermanentWidget(new QLabel("White"));
@@ -288,7 +288,7 @@ App::loadStatusBar()
     _blackCombo = new QComboBox();
     statusBar->addPermanentWidget(_blackCombo);
     _blackCombo->addItems(players);
-    _blackCombo->setCurrentIndex(3);
+    _blackCombo->setCurrentIndex(4);
     connect(_blackCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(setBlackPlayer(int)));
 }
 
@@ -333,6 +333,9 @@ App::setBlackPlayer(int idx)
         case 3:
             _game->setBlackPlayer(new NegaMaxPlayerWTt(_game, Black, new SomeHeuristic()));
             break;
+        case 4:
+            _game->setBlackPlayer(new MTDfPlayer(_game, Black, new SomeHeuristic()));
+            break;
     }
 }
 
@@ -353,6 +356,9 @@ App::setWhitePlayer(int idx)
             break;
         case 3:
             _game->setWhitePlayer(new NegaMaxPlayerWTt(_game, White, new SomeHeuristic()));
+            break;
+        case 4:
+            _game->setWhitePlayer(new MTDfPlayer(_game, White, new SomeHeuristic()));
             break;
     }
 }

@@ -98,7 +98,6 @@ Q_DECLARE_METATYPE(Move)
 struct MoveBit {
     BitBoard path;
     BitBoard taken;
-    // test if king: _kings & path
 
     MoveBit() { }
     MoveBit(const MoveBit &other)
